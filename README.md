@@ -9,7 +9,7 @@ Requirements:
 - Recent Linux distribution that with Bash [8] and Perl [9] and
   utilities such as make, rsync and common command line utilities. 
 - FMRIB FSL library [10]
-- N4 intensity inhomogeneity correction tool [11] (e.g. from Slicer3 [12])
+- N4 intensity inhomogeneity correction tool [11] e.g. from Slicer3 [12]
 - Tools for NIfTI and ANALYZE image in MATLAB [13]
 - LIBRA: a Matlab library for robust analysis [14]
 
