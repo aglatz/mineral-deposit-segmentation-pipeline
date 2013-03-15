@@ -1,5 +1,5 @@
 function [OccCorr, BinCentre, X, Y] = plot_hist(I, I_Max, I_Max_Pos, ...
-												hist_colour, print_kde)
+                                                hist_colour, print_kde)
 % Generates and plots a histogram with optimal bin width and adds
 % the kernel density estimate, if requested.
 % INPUTS: I - the data vector to plot
