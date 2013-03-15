@@ -1,7 +1,9 @@
 function [] = plot_fitprobdistunivparamhist(Hist, Dist)
 % Plots the histogram returned by fitprobdistunivparam().
 % INPUTS: Hist - the histogram
-%         Dist - the distributions that were fitted to the data
+%         Dist - a cell array with distribution names
+%                that were fitted to the data
+%
 bar(Hist);
 Lim = axis;
 Lim(end) = 100;

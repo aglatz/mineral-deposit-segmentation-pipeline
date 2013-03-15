@@ -5,9 +5,9 @@ function [Bfit, Bfit_hist] = fitprobdistunivparam(X, Dist_type, N_min, Tf)
 % INPUTS: X - Cell vector, of which each element contains an input data vector
 %         Dist_type - Cell array that contains valid distribution
 %                     types as string (see help fitdist)
-%         N_min - Minimum number of vector elements needed
+%         N_min - Minimum length of each data vector
 %         Tf - Scaling range (e.g. [0 1] for fitting a beta distribution)
-% OUTPUTS: Bfit - Cell array that has the same length as 'X' and of which
+% OUTPUTS: Bfit - Cell matrix that has the same length as 'X' and of which
 %                 each row contains the best fitting distribution (according
 %                 to the Akakine Information Criteria)
 %          Bfit_hist - Histogram which shows the frequency with which each
