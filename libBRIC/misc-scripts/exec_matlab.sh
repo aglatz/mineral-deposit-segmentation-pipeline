@@ -50,7 +50,8 @@ ARG_CNT=2
 SC='+'
 START_MSG="START_${SCRIPT_NAME}"
 ERROR_MSG="ERROR_${SCRIPT_NAME}"
-SEDEXP="s${SC}\${*ERROR_MSG}*${SC}${ERROR_MSG}${SC}g;"
+SEDEXP="s${SC}\${*SCRIPT_DIR}*${SC}${SCRIPT_DIR}${SC}g;"
+SEDEXP="s${SC}\${*ERROR_MSG}*${SC}${ERROR_MSG}${SC}g;$SEDEXP"
 SEDEXP="s${SC}\${*START_MSG}*${SC}${START_MSG}${SC}g;$SEDEXP"
 while [ $ARG_CNT -le $# ]
 do
@@ -71,9 +72,6 @@ then
 	echo "Error: Could not create $TMPSCRIPT_PATH!"
 	usage
 fi
-
-# Change to working directory first
-echo "cd ${SCRIPT_DIR};" >>$TMPSCRIPT_PATH
 
 # Substitude arguments and add to file
 SEDEXP="sed -e '${SEDEXP}' $SCRIPT_PATH >> $TMPSCRIPT_PATH"
