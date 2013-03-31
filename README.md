@@ -6,12 +6,11 @@ A pipeline for segmenting mineral deposits on clinical magnetic resonance imagin
 The pipeline was originally developed at the Brain Imaging Research Centre [5] as part of a PhD project supported by SINAPSE/Spirit [6] on Red Hat Enterprise Linux 5 [7] and Matlab 2011b [8].
 
 Requirements:
-- Recent Linux distribution that with Bash [9] and Perl [10] and
-  utilities such as make, rsync and common command line utilities. 
-- FMRIB FSL library [11]
-- N4 intensity inhomogeneity correction tool [12] e.g. from Slicer3 [13]
-- Tools for NIfTI and ANALYZE image in MATLAB [14]
-- LIBRA: a Matlab library for robust analysis [15]
+- Recent Linux distribution (e.g. Neurodebian [9]) with Bash [10] and Perl [11] and common utilities, such as make and rsync. 
+- FMRIB FSL library [12]
+- N4 intensity inhomogeneity correction tool [13] e.g. from Slicer3 [14]
+- Tools for writing and reading NIfTI and ANALYZE image in MATLAB [15]
+- LIBRA: a Matlab library for robust analysis [16]
 
 References:
 [1] http://www.biomedical-image-analysis.co.uk/images/stories/glatz-posters1-32.pdf
@@ -22,11 +21,12 @@ References:
 [6] http://www.sinapse.ac.uk
 [7] http://www.redhat.com/products/enterprise-linux
 [8] http://www.mathworks.com
-[9] http://www.gnu.org/software/bash
-[10] http://www.perl.org
-[11] http://fsl.fmrib.ox.ac.uk/fsl
-[12] http://www.insight-journal.org/browse/publication/640
-[13] http://www.slicer.org/
-[14] http://www.rotman-baycrest.on.ca/~jimmy/NIFTI/
-[15] http://wis.kuleuven.be/stat/robust/LIBRA/LIBRA-home
+[9] http://neuro.debian.net/
+[10] http://www.gnu.org/software/bash
+[11] http://www.perl.org
+[12] http://fsl.fmrib.ox.ac.uk/fsl
+[13] http://www.insight-journal.org/browse/publication/640
+[14] http://www.slicer.org/
+[15] http://www.rotman-baycrest.on.ca/~jimmy/NIFTI/
+[16] http://wis.kuleuven.be/stat/robust/LIBRA/LIBRA-home
 
