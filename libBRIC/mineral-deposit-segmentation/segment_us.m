@@ -73,12 +73,7 @@ for idx_vain = 1:N_vain
         end
     end
 end
-% Determine mode
-if isempty(I_gre_thr)
-    unsupervised = 1;
-else
-    unsupervised = 0;
-end
+
 % Reference intensity percentiles
 Pctls = [.7 .75 .8 .85 .9];
 I_gre_thr_ref = NaN(1, length(Pctls));
@@ -127,9 +122,9 @@ for idx_lab = 1:N_lab
     S_ntis = S_ntis + cast(SM_ntis, class(S_ntis)) .* Lab(idx_lab);
     
     % Filter out outliers from segmentation, imaging and vessels.
-    if unsupervised
-        is_GP = Lab(idx_lab) == 13 || Lab(idx_lab) == 52;
-        if is_GP
+    if isempty(I_gre_thr)
+        % Derive threshold from first ROI
+        if Lab(idx_lab) == Lab(1)
             % Derive Threshold from GP
             [SM_oli_filt, I_gre_thr] = ...
                 morph_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, [], P_thr, 1, SM_voi, cont_min);
@@ -251,7 +246,7 @@ for idx_lab = 1:N_lab
 end
 % Filter out low contrast CC
 L = conncomp_init(SM_oli, 3);
-CC = conncomp_list_simple(L, L, SM_voi, S_gre, [1 1 1]);
+CC = conncomp_list(L, L, SM_voi, S_gre, [1 1 1]);
 if CC(1).lab > -1
     M = [CC.cont] < cont_min;
     Lab = [CC(M).lab]';
@@ -286,7 +281,7 @@ SM_oli = SM_voi;
 SM_oli(SM_voi) = ~M;
 
 % Thresholds
-[I_gre_min, I_t1w_min] = ellipsplot(I_ntis_mean, C_ntis, Mat, 'r', Chi2_thr);
+[I_gre_min, I_t1w_min] = ellipsplot_mod(I_ntis_mean, C_ntis, Mat, 'r', Chi2_thr);
 pcomp_plot(I_ntis_mean, I_ntis_sd, 'b');
 
 
