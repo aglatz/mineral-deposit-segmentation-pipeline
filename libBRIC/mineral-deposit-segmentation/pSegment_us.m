@@ -22,9 +22,12 @@
 %                                Subjects - Cell array with subjects paths.
 %
 
-addpath('NIFTI/');
-addpath('LIBRA/');
-addpath('libBRIC/');
+% First include our libraries
+addpath('../misc-matlab/');
+
+% Include external libraries
+addpath('/home/aglatz/tmp/mineral/NIFTI/');
+addpath('/home/aglatz/tmp/mineral/LIBRA/');
 
 close all;
 

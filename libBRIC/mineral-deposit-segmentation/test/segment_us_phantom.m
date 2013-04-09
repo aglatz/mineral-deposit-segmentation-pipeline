@@ -1,6 +1,6 @@
 % First include our libraries
-addpath('../mineral-deposit-segmentation');
-addpath('../misc-matlab/');
+addpath('../../mineral-deposit-segmentation');
+addpath('../../misc-matlab/');
 
 % Include external libraries
 addpath('/home/aglatz/tmp/mineral/NIFTI/');
