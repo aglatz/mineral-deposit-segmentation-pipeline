@@ -174,7 +174,7 @@ function [MD_oli_min, MD_ntis_oli, MD_min_ref] = ...
 SM_ntis_oli_ref = SM_ntis | SM_oli | SM_ref;
 Mat = [S_gre(SM_ntis_oli_ref) S_t1w(SM_ntis_oli_ref)];
 MD_ntis_oli_ref = sqrt(mahalanobis(Mat, I_ntis_mean, 'cov', C_ntis));
-[y, x] = chiqqplot(MD_ntis_oli_ref, 2, 'MCDCOV');
+[y, x] = chiqqplot_mod(MD_ntis_oli_ref, 2, 'MCDCOV');
 hold on;
 
 % Plot chosen threshold
