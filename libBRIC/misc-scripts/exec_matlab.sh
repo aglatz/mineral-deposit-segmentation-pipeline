@@ -31,7 +31,7 @@ function canonize_path()
 # MAIN ######################################################################
 SCRIPT_EXT=".mt"
 SCRIPT_PATH=$1
-if [ ! -f $SCRIPT_PATH ]
+if [ "$SCRIPT_PATH" = "" -o ! -f "$SCRIPT_PATH" ]
 then
 	echo "Error: Could not read MATLAB script ${SCRIPT_PATH}!"
 	usage
@@ -45,22 +45,6 @@ then
 fi
 SCRIPT_DIR=$(canonize_path $(dirname $SCRIPT_PATH));
 
-# Build sed command with all arguments
-ARG_CNT=2
-SC='+'
-START_MSG="START_${SCRIPT_NAME}"
-ERROR_MSG="ERROR_${SCRIPT_NAME}"
-SEDEXP="s${SC}\${*SCRIPT_DIR}*${SC}${SCRIPT_DIR}${SC}g;"
-SEDEXP="s${SC}\${*ERROR_MSG}*${SC}${ERROR_MSG}${SC}g;$SEDEXP"
-SEDEXP="s${SC}\${*START_MSG}*${SC}${START_MSG}${SC}g;$SEDEXP"
-while [ $ARG_CNT -le $# ]
-do
-	ARG_NAME="ARG_$((ARG_CNT-2))";
-	eval ARG_VAL=$(echo \"\$${ARG_CNT}\");
-	SEDEXP="s${SC}\${*${ARG_NAME}}*${SC}${ARG_VAL}${SC}g;$SEDEXP"
-	ARG_CNT=$((ARG_CNT+1))
-done
-
 # Use mktemp - it fails if the same file already exists.
 # Add two random numbers because previous versions of mktemp
 # do not replace X's if they are not behind a '.' and at the end
@@ -72,6 +56,32 @@ then
 	echo "Error: Could not create $TMPSCRIPT_PATH!"
 	usage
 fi
+TMPSCRIPT_NAME=`basename $TMPSCRIPT_PATH .m`
+
+# Generate prologe
+START_MSG="${SCRIPT_NAME}_START"
+ERROR_MSG="${SCRIPT_NAME}_ERROR"
+cat << EOF >> ${TMPSCRIPT_PATH}
+function ${TMPSCRIPT_NAME}()
+${TMPSCRIPT_NAME}_cleanupobj = onCleanup(@${TMPSCRIPT_NAME}_cleanup);
+try
+    fprintf(1, '${START_MSG}\n');
+    addpath('${SCRIPT_DIR}');
+    % Start of template
+EOF
+
+# Build sed command with all arguments
+ARG_CNT=2
+SC='+'
+SEDEXP="s${SC}\${*SCRIPT_DIR}*${SC}${SCRIPT_DIR}${SC}g;"
+SEDEXP="s${SC}\${*TMPSCRIPT_NAME}*${SC}${TMPSCRIPT_NAME}${SC}g;$SEDEXP"
+while [ $ARG_CNT -le $# ]
+do
+	ARG_NAME="ARG_$((ARG_CNT-2))";
+	eval ARG_VAL=$(echo \"\$${ARG_CNT}\");
+	SEDEXP="s${SC}\${*${ARG_NAME}}*${SC}${ARG_VAL}${SC}g;$SEDEXP"
+	ARG_CNT=$((ARG_CNT+1))
+done
 
 # Substitude arguments and add to file
 SEDEXP="sed -e '${SEDEXP}' $SCRIPT_PATH >> $TMPSCRIPT_PATH"
@@ -81,6 +91,19 @@ then
 	echo "Error: Could not substitute arguments!"
 	usage
 fi
+
+# Generate epiloge
+cat << EOF >> $TMPSCRIPT_PATH
+    % End of template
+catch ${TMPSCRIPT_NAME}_exception
+    fprintf(2, '${ERROR_MSG}\n');
+    ${TMPSCRIPT_NAME}_exception.identifier
+    ${TMPSCRIPT_NAME}_exception.stack
+end
+
+function ${TMPSCRIPT_NAME}_cleanup()
+quit;
+EOF
 
 # Check if we have matlab
 FOUND=0
