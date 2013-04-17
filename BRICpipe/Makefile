@@ -9,14 +9,14 @@ MISSING_SFX = .missing
 COST_SFX = .cost
 KEEP_FLAG ?= 1
 SCRIPT_DIR ?= 
-$(info SCRIPT_DIR = $(SCRIPT_DIR))
+#$(info SCRIPT_DIR = $(SCRIPT_DIR))
 
 
 # Fsl vars ####################################################################
 # We keep this one flexible since there is a difference
 # between the different Linux distributions.
 FSL_PFX = $(shell $(SCRIPT_DIR)setup_environment.sh FSL_PFX)
-$(info FSL_PFX = $(FSL_PFX))
+#$(info FSL_PFX = $(FSL_PFX))
 FSL_BIN_PFX = $(FSL_PFX)/bin/
 FSL_DATA = $(FSL_PFX)/data/
 # .nii.gz prefered so we can easily check if target was
@@ -38,7 +38,7 @@ FSL_EXT_MAT_SED = sed s+\\.mat$$++g
 
 # Slicer vars #################################################################
 SLC_PFX = $(shell $(SCRIPT_DIR)setup_environment.sh SLC_PFX)
-$(info SLC_PFX = $(SLC_PFX))
+#$(info SLC_PFX = $(SLC_PFX))
 
 
 # Input data ##################################################################

@@ -178,11 +178,13 @@ do
 			done
 			# Remove missing targets files
 			make -C ${CUR_DIR} -f ${BASE_DIR}/Makefile \
+				$EXTRA_ARGS \
 				clean-mtg &> $LOG_FILE
 		fi
 	else
 		# Remove missing targets files
 		make -C ${CUR_DIR} -f ${BASE_DIR}/Makefile \
+			$EXTRA_ARGS \
 			clean-mtg &> $LOG_FILE
 	fi
 	
@@ -300,7 +302,8 @@ do
 
 	# Gather info about missing targets
 	make -f ${BASE_DIR}/Makefile \
-		 print-mtg >> ${BASE_DIR}/${ERR_FILE}.tmp
+		$EXTRA_ARGS \
+		print-mtg >> ${BASE_DIR}/${ERR_FILE}.tmp
 
 	# Gather image stats
 	if [ -f ${STAT_FILE_NAME} ]
