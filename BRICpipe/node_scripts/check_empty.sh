@@ -1,0 +1,1 @@
+../../libBRIC/misc-scripts/check_empty.sh
