@@ -1,5 +1,5 @@
 % First include our libraries
-addpath('libBRIC/misc-matlab/');
+addpath('../../libBRIC/misc-matlab/');
 
 % Include external libraries
 addpath('NIFTI/');
