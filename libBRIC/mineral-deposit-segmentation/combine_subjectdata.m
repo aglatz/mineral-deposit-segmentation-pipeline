@@ -13,7 +13,7 @@ roi_name = 'RO_mask'; % name of ROI mask in subject directory
 gre_name = 'GRE_brain_restore'; % name of GRE volume
 icv_name = 'GRE_brain_mask'; % name of ICV mask
 
-Read subject file
+% Read subject file
 fd = fopen(sub_file);
 if fd < 0
     error('create_subjectdata:fileopenerror', 'Could not open file!');
