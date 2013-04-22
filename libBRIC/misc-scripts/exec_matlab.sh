@@ -102,7 +102,7 @@ catch ${TMPSCRIPT_NAME}_exception
 end
 
 function ${TMPSCRIPT_NAME}_cleanup()
-quit;
+fprintf('\n'); quit;
 EOF
 
 # Check if we have matlab

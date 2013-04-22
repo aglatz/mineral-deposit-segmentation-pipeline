@@ -1,6 +1,26 @@
-function [CC, SM, slices, L] = conncomp_stats_simple(path, name_con, use_lab, ...
-                                                  name_roi, use_roi, use_iso, ...
-                                                  name_weight)
+function [CC, SM, slices, L] = conncomp_stats(path, name_con, use_lab, ...
+                                              name_roi, use_roi, use_iso, ...
+                                              name_weight)
+% Identifies the connected components of the input mask and 
+% returns stats for each connected component in a structure list 'CC'.
+% Inputs: path - the subject path
+%         name_con - file name of the mask, which can be labeled
+%         use_lab - flag indicating if the connected component labes of the
+%                   mask should be used
+%         name_roi - file name of the labeled ROI mask
+%         use_roi - flag indicating if only the slices should be loaded
+%                   where ROI mask is non-zero (for speeding things up)
+%         use_iso - reslice mask so that voxels are isotropic with a 
+%                   size equal to the minimum extend of a mask voxel
+%         name_weight - additional weight for deciding the location label
+%                       of the connected components of the mask
+% Outputs: CC - list of connected components with properties of the
+%               connected components, such as the location, volume, ...
+%          SM - 3D mask (logical)
+%          slices - if 'use_roi' flag was true then this contains the 
+%                   numbers of slices where ROI is non-zero
+%          L - 3D label matrix from 'bwlabeln()'
+%
 if use_roi
     S_roi = load_series([path '/' name_roi], []);
     Roi = roi_init(S_roi);
@@ -35,7 +55,7 @@ end
 NII = load_series([path '/' name_roi], 0);
 F = NII.hdr.dime.pixdim(2:4);
 if use_iso
-    F_iso = [min(F) min(F) min(F)]/2;
+    F_iso = [min(F) min(F) min(F)];
 else
     F_iso = F;
 end
@@ -63,5 +83,5 @@ S_roi = load_series([path '/' name_roi], slices);
 S_weight = load_series([path '/' name_weight], slices);
 
 % Get CC stats
-CC = conncomp_list_simple(L, L_iso, S_roi, S_weight, F);
+CC = conncomp_list(L, L_iso, S_roi, S_weight, F);
 

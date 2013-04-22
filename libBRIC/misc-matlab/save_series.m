@@ -23,8 +23,8 @@ function [] = save_series(base_name, new_name, new_series, zidx)
 % Load the header of the base image
 NII = load_series(base_name, 0);
 if NII.hdr.dime.dim(1) ~= length(size(new_series))
-    error('save_series:dimerror', ...
-          'Base volume and new volume have different dimensionality!');
+    warning('save_series:dimerror', ...
+            'Base volume and new volume have different dimensionality!');
 end
 % Add the image data
 if isempty(zidx)
