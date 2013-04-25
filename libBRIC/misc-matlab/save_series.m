@@ -1,4 +1,4 @@
-function [] = save_series(base_name, new_name, new_series, zidx)
+function [] = save_series(base_name, new_name, new_series, zidx, varargin)
 % Load NIFTI or Analyze file (.nii.gz, .nii, or .hdr/.img)
 % INPUTS: base_name - base image from which the header information (orientation)
 %                     is extracted to create the header of the new file.
@@ -22,10 +22,7 @@ function [] = save_series(base_name, new_name, new_series, zidx)
 
 % Load the header of the base image
 NII = load_series(base_name, 0);
-if NII.hdr.dime.dim(1) ~= length(size(new_series))
-    warning('save_series:dimerror', ...
-            'Base volume and new volume have different dimensionality!');
-end
+
 % Add the image data
 if isempty(zidx)
     if islogical(new_series)
@@ -34,6 +31,11 @@ if isempty(zidx)
         NII.img = new_series;
     end
 else
+    if NII.hdr.dime.dim(1) ~= length(size(new_series))
+        error('save_series:dimerror', ...
+              'Base volume and new volume have different dimensionality!');
+    end
+    
     if islogical(new_series)
         NII.img = zeros(NII.hdr.dime.dim(2:NII.hdr.dime.dim(1)+1), 'uint8');
         NII.img(:, :, zidx, :, :) = uint8(new_series);
@@ -45,6 +47,18 @@ end
 
 % Call make_nii to get correct datatype, bitpix value, ...
 NII_tmp = make_nii(NII.img);
+N_varargs = length(varargin);
+if N_varargs > 0
+    pixdim = varargin{1};
+    if length(pixdim) == ndims(NII.img)
+        tmp = NII.hdr.dime.pixdim;
+        tmp(2:length(pixdim)+1) = pixdim;
+        NII.hdr.dime.pixdim = tmp;
+    else
+        error('save_series:pixdimerror', ...
+              'Number of pixel dimension does not match dimensionality of volume!');
+    end
+end
 NII.hdr.dime.dim = NII_tmp.hdr.dime.dim;
 NII.hdr.dime.datatype = NII_tmp.hdr.dime.datatype;
 NII.hdr.dime.bitpix = NII_tmp.hdr.dime.bitpix;
