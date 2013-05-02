@@ -2,16 +2,17 @@
 
 SLC_PFX=/usr/local/Slicer3/
 FSL_PFX=/usr/local/fsl/4.1.9/
+FLIRT_PASS1="-dof 6"
+FLIRT_PASS2=""
+AR_IDX="1"
+WM_IDX="3"
+GM_IDX="4"
+CS_IDX="1"
+BET_GRE="-f 0.4"
+BET_T1W="-f 0.25 -B"
+BET_T2W="-f 0.25 -B"
+BET_FLAIR="-f 0.25 -B"
 
 # Return environment variable name
-VAR_NAME=$1
-VAR_VAL=`set | grep -w "${VAR_NAME}=" | sed s/"${VAR_NAME}="//g`
-
-if [ -z $VAR_VAL ]
-then
-	echo "";
-	exit 1
-else
-	echo $VAR_VAL
-	exit 0
-fi
+eval "echo \$$1"
+exit 0

@@ -438,7 +438,8 @@ endef
 
 # Brain extract rules #########################################################
 $(L_GRE_BRAIN_BET_MASK): $(L_GRE_VOL)
-	@$(brain_mask)
+	@BET_COEF=`$(SCRIPT_DIR)setup_environment.sh BET_GRE`; \
+	 $(brain_mask)
 	@$(check_target)
 
 $(L_GRE_BRAIN_MASK): $(L_GRE_BRAIN_BET_MASK) $(L_IC_REF_MASK)
@@ -460,15 +461,18 @@ $(L_GRE_BRAIN_VOL): $(L_GRE_VOL) $(L_GRE_BRAIN_MASK)
 	@$(check_target)
 
 $(L_T1W_NOTREG_BRAIN1_MASK): $(L_T1W_NOTREG_VOL)
-	@$(brain_mask) 
+	@BET_COEF=`$(SCRIPT_DIR)setup_environment.sh BET_T1W`; \
+	 $(brain_mask)
 	@$(check_target)
 
 $(L_FLAIR_NOTREG_BRAIN1_MASK): $(L_FLAIR_NOTREG_VOL)
-	@$(brain_mask)
+	@BET_COEF=`$(SCRIPT_DIR)setup_environment.sh BET_FLAIR`; \
+	 $(brain_mask)
 	@$(check_target)
 
 $(L_T2W_NOTREG_BRAIN1_MASK): $(L_T2W_NOTREG_VOL)
-	@$(brain_mask)
+	@BET_COEF=`$(SCRIPT_DIR)setup_environment.sh BET_T2W`; \
+	 $(brain_mask)
 	@$(check_target)
 
 $(L_T1W_NOTREG_BRAIN1_VOL): $(L_T1W_NOTREG_VOL) $(L_T1W_NOTREG_BRAIN1_MASK)
@@ -527,14 +531,10 @@ VOL=`$(SCRIPT_DIR)check_empty.sh $(FSL_BIN_PFX) $<`; \
 if [ $$? -eq 0 -a $$VOL -gt 0 ]; \
 then \
 	NAME=`echo $< | $(FSL_EXT_VOL_SED)`; \
-	BET_COEF_STD="-m -n"; \
-	if [ $$NAME = $(L_T1W_NOTREG) -o $$NAME = $(L_FLAIR_NOTREG) -o $$NAME = $(L_T2W_NOTREG) ]; \
-	then \
-		BET_COEF_STD="$$BET_COEF_STD -B -f 0.25"; \
-	fi; \
+	BET_COEF="-m -n $$BET_COEF"; \
 	echo -n "$(CUR_DIR)/$@: extracting brain using bet "; \
-	echo -n "with $$BET_COEF_STD $$BET_COEF..."; \
-	$(FSL_BIN_PFX)bet $$NAME $${NAME}_tmp $$BET_COEF_STD $$BET_COEF; \
+	echo -n "with $$BET_COEF..."; \
+	$(FSL_BIN_PFX)bet $$NAME $${NAME}_tmp $$BET_COEF; \
 	mv $${NAME}_tmp_mask$(FSL_EXT_VOL) $@; \
 	rm -f $${NAME}_tmp*; \
 	echo "done."; \
@@ -610,7 +610,8 @@ endef
 
 # Co-registering rules ########################################################
 $(L_T1W_NOTREG_MAT): $(L_T1W_NOTREG_VOL) $(L_GRE_VOL)
-	@$(register)
+	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS1`; \
+	 $(register)
 	@$(check_target)
 
 $(L_T1W1_VOL):	$(L_T1W_NOTREG_VOL) $(L_GRE_BRAIN_RESTORE_VOL) \
@@ -620,17 +621,20 @@ $(L_T1W1_VOL):	$(L_T1W_NOTREG_VOL) $(L_GRE_BRAIN_RESTORE_VOL) \
 	@$(check_target)
 
 $(L_T1W_NOTREG_BRAIN1_MAT):	$(L_T1W_NOTREG_BRAIN1_VOL) $(L_GRE_BRAIN_VOL)
-	@$(register)
+	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS1`; \
+	 $(register)
 	@$(check_target)
 
 $(L_FLAIR_NOTREG_BRAIN1_MAT): $(L_T1W_NOTREG_BRAIN_VOL) \
 							  $(L_FLAIR_NOTREG_BRAIN1_VOL)
-	@$(register)
+	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS1`; \
+	 $(register)
 	@$(check_target)
 
 $(L_T2W_NOTREG_BRAIN1_MAT): $(L_T1W_NOTREG_BRAIN_VOL) \
 							$(L_T2W_NOTREG_BRAIN1_VOL)
-	@$(register)
+	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS1`; \
+	 $(register)
 	@$(check_target)
 
 $(L_T1W_NOTREG_BRAIN1_INV_MAT):	$(L_T1W_NOTREG_BRAIN1_MAT)
@@ -648,17 +652,20 @@ $(L_T2W_NOTREG_BRAIN1_INV_MAT): $(L_T2W_NOTREG_BRAIN1_MAT) \
 	@$(check_target)
 
 $(L_T1W_NOTREG_BRAIN_MAT):	$(L_T1W_NOTREG_BRAIN_VOL) $(L_GRE_BRAIN_VOL)
-	@$(register)
+	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS2`; \
+	 $(register)
 	@$(check_target)
 
 $(L_T1W_NOTREG_BRAIN_RESTORE_MAT): $(L_T1W_NOTREG_BRAIN_RESTORE_VOL) \
 								   $(L_GRE_BRAIN_RESTORE_VOL)
-	@$(register)
+	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS2`; \
+	 $(register)
 	@$(check_target)
 
 $(L_T1W_NOTREG_BRAIN_RESTORE_TOFLAIR_MAT): $(L_T1W_NOTREG_BRAIN_RESTORE_VOL) \
 										   $(L_FLAIR_NOTREG_BRAIN_RESTORE_VOL)
-	@$(register)
+	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS2`; \
+	 $(register)
 	@$(check_target)
 
 $(L_FLAIR_NOTREG_BRAIN_RESTORE_MAT): $(L_T1W_NOTREG_BRAIN_RESTORE_MAT) \
@@ -805,13 +812,13 @@ $(L_SE_MASK): $(L_T1W_BRAIN_RESTORE_VOL) $(L_GRE_BRAIN_RESTORE_VOL)
 	 echo "done.";
 	@$(check_target)
 
-$(L_SE_LORD): $(L_GRE_BRAIN_RESTORE_VOL) $(L_SE_MASK)
-	@echo -n "$(CUR_DIR)/$@: determine label order..."; \
-	 GRE=`echo "$+" | cut -d ' ' -f 1`; \
-	 MASK=`echo "$+" | cut -d ' ' -f 2`; \
-	 $(SCRIPT_DIR)exec_matlab.sh $(SCRIPT_DIR)order_labels.mt $$GRE $$MASK $@; \
-	 echo "done."
-	@$(check_target)
+#$(L_SE_LORD): $(L_GRE_BRAIN_RESTORE_VOL) $(L_SE_MASK)
+#	@echo -n "$(CUR_DIR)/$@: determine label order..."; \
+#	 GRE=`echo "$+" | cut -d ' ' -f 1`; \
+#	 MASK=`echo "$+" | cut -d ' ' -f 2`; \
+#	 $(SCRIPT_DIR)exec_matlab.sh $(SCRIPT_DIR)order_labels.mt $$GRE $$MASK $@; \
+#	 echo "done."
+#	@$(check_target)
 
 $(L_SE_HARD_MASK): $(L_SE_MASK)
 	@cp tmp_$< $@;
@@ -825,29 +832,33 @@ $(L_SE_HARD_LORD): $(L_GRE_BRAIN_RESTORE_VOL) $(L_SE_HARD_MASK)
 	 echo "done."
 	@$(check_target)
 
-$(L_WM_MASK): $(L_SE_MASK) $(L_WM_REF_MASK) $(L_SE_LORD)
+$(L_WM_MASK): $(L_SE_MASK) $(L_WM_REF_MASK) $(L_SE_HARD_LORD)
 	@VOL=`$(SCRIPT_DIR)check_empty.sh $(FSL_BIN_PFX) $(L_WM_REF_MASK)`; \
 	 if [ $$? -eq 0 -a $$VOL -gt 0 ]; \
 	 then \
 		$(FSL_BIN_PFX)fslmaths $(L_WM_REF_MASK) $@; \
 	 else \
-		TISS=`cat $(L_SE_LORD) | cut -d ' ' -f 2`; \
+		IDX=`$(SCRIPT_DIR)setup_environment.sh WM_IDX`; \
+		TISS=`cat $(L_SE_HARD_LORD) | cut -d ' ' -f $$IDX`; \
 		$(thr_mask) \
 	 fi;
 	@$(check_target)
 
-$(L_GM_MASK): $(L_SE_MASK) $(L_SE_LORD)
-	@TISS=`cat $(L_SE_LORD) | cut -d ' ' -f 4`; \
+$(L_GM_MASK): $(L_SE_MASK) $(L_SE_HARD_LORD)
+	@IDX=`$(SCRIPT_DIR)setup_environment.sh GM_IDX`; \
+	 TISS=`cat $(L_SE_HARD_LORD) | cut -d ' ' -f $$IDX`; \
 	 $(thr_mask)
 	@$(check_target)
 
-$(L_CS_MASK): $(L_SE_MASK) $(L_SE_LORD)
-	@TISS=`cat $(L_SE_LORD) | cut -d ' ' -f 6`; \
+$(L_CS_MASK): $(L_SE_MASK) $(L_SE_HARD_LORD)
+	@IDX=`$(SCRIPT_DIR)setup_environment.sh CS_IDX`; \
+	 TISS=`cat $(L_SE_HARD_LORD) | cut -d ' ' -f $$IDX`; \
 	 $(thr_mask)
 	@$(check_target)
 
 $(L_AR_MASK): $(L_SE_HARD_MASK) $(L_SE_HARD_LORD)
-	@TISS=`cat $(L_SE_HARD_LORD) | cut -d ' ' -f 1`; \
+	@IDX=`$(SCRIPT_DIR)setup_environment.sh AR_IDX`; \
+	 TISS=`cat $(L_SE_HARD_LORD) | cut -d ' ' -f $$IDX`; \
 	 $(thr_mask)
 	@$(check_target)
 
