@@ -63,7 +63,11 @@ if ~isnan(AICd) && AICd > 0
     N_Idx_u = length(Idx_u);
     I_ntis_means = zeros(N_Idx_u, 2);
     for idx = 1:N_Idx_u
+        try
         [~, I_ntis_means(idx, :)] = pcomp_find(Mat(Idx == Idx_u(idx), :));
+        catch
+        I_ntis_means(idx, :) = median(Mat(Idx == Idx_u(idx), :));
+        end
     end
 
     if ~isempty(I_ntis_mean_est)

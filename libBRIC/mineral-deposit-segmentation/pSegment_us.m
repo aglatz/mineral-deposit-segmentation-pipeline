@@ -148,13 +148,13 @@ for idx_j = 1:size(OverLoc, 1);
     
     % Save results
 	Out_name = 'Oli_us_mask';
-    save_series_roi(Subject, Name_roi_red, Out_name, S_out_all, roi_nifti_sliceno(Roi, []));
-    save_series_roi(Subject, Name_roi_red, 'NonTis_mask', S_nontis_all, roi_nifti_sliceno(Roi, []));
-    save_series_roi(Subject, Name_roi_red, 'NormTis_mask', S_ntis_all, roi_nifti_sliceno(Roi, []));
+    save_series([Subject '/' Name_roi_red], [Subject '/' Out_name], S_out_all, roi_nifti_sliceno(Roi, []));
+    save_series([Subject '/' Name_roi_red], [Subject '/NonTis_mask'], S_nontis_all, roi_nifti_sliceno(Roi, []));
+    save_series([Subject '/' Name_roi_red], [Subject '/NormTis_mask'], S_ntis_all, roi_nifti_sliceno(Roi, []));
     
-    preproc([], 1, Subject, T1W_name, GRE_name, ...
-            'WM_mask', 'GM_mask', 'CS_mask', Out_name, Name_roi_red, ...
-            'AR_mask', []);
+%     preproc([], 1, Subject, T1W_name, GRE_name, ...
+%             'WM_mask', 'GM_mask', 'CS_mask', Out_name, Name_roi_red, ...
+%             'AR_mask', []);
     
     if ~isempty(S_ref)
         Ret = validate(Subject, Out_name, Fe_name, [], Name_roi_red, 1);
