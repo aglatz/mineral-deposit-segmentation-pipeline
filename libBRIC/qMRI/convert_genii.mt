@@ -7,7 +7,7 @@ N_te = ${ARG_1};
 te = ${ARG_2}; % in us
 te2 = ${ARG_3}; % in us
 if ${ARG_4} > 0 && ${ARG_5} > 0
-	Res = [${ARG_3} ${ARG_4}];
+	Res = [${ARG_4} ${ARG_5}];
 else
 	Res = [];
 end
@@ -21,7 +21,7 @@ else
 end
 
 % Load multi-echo data
-[S_abs, S_pha] = read_genii(fname_in, T, true, Res);
+[S_abs, S_pha] = read_genii(fname_in, T, ${ARG_7}, Res);
 
 % Save multi-echo data
 save_series([fname_in '_' num2str(T(1))], [fname_out '_mag'], S_abs, []);
