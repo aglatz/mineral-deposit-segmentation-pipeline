@@ -1,139 +1,139 @@
 % This script gets called from segment_us_mp(), which distributes the
 % input data accross several CPU cores using pMatlab (see
-% http://www.ll.mit.edu/mission/isr/pmatlab/ for further info). To run
-% this script standalone (un)comment lines below.
+% http://www.ll.mit.edu/mission/isr/pmatlab/ for further info).
+%
 % This script expects three files in each subject directory:
 % - RO_mask: the masks with the regions of interests
 % - GRE_brain_restore: the GRE volume which was brain extracted
 %                      (not strictly necessary) and bias-field corrected.
 % - T1W_brain_restore: the T1W volume which was brain extracted
 %                      (not strictly necessary) and bias-field corrected
-% If a reference mask is available for a subject then the mask should
-% have the file name 'FE_roi_mask'.
-% INPUTS (as global variables): SubjectFile - A csv file in the format
-%                       used for preprocessing. The last column is read
-%                       and should contain the subject directory paths.
-% RETURNS (as global variables): Ret - Cell array containing the results
-%                                      from validate() for every subject.
-%                                Over - Contains info about GRE cutoff
-%                       thresholds calculated with the generated and
-%                       reference masks, if given. See last two return
-%                       values of segment_us().
-%                                Subjects - Cell array with subjects paths.
+% It generates the following files for each subject:
+% - NonTis_mask: A mask selecting what appears to be not normal tissue
+% - NormTis_mask: A mask selecting the normal-appearing tissue
+% - T2swHypo_mask: A mask selecting T2sw hypointensities (subset of
+%                  NonTis_mask)
 %
 
 % First include our libraries
 addpath('../misc-matlab/');
 
-% Include external libraries
-addpath('/home/aglatz/tmp/mineral/NIFTI/');
-addpath('/home/aglatz/tmp/mineral/LIBRA/');
+% Include external libraries - create symbolic links if it fails here!
+addpath('NIFTI/');
+addpath('LIBRA/');
 
-close all;
+close all; % No 'clear all' otherwise we loose our input variables!
 
-if isempty(SubjectFile)
-	error('pSegment:Inputargs', 'Insufficient # of input arguments');
+% Load input vars in mp mode
+InputFileVar = 'InputFile';
+if exist(InputFileVar, 'var') > 0
+    PMatDir = tempdir;
+    InputFile = [PMatDir '/' InputFile];
+    load(InputFile);
 end
-OutFile = 'class';
 
-% Read subject file
-fd = fopen(SubjectFile);
-Subjects = textscan(fd, '%s%s%s%s%s%s%s%s%s%*[^\n]', ...
-                       'delimiter',',',...
-                       'treatAsEmpty',{'NA','na'}, ...
-                       'commentStyle', '#');
-fclose(fd);
-Subjects = Subjects{9};
-% load('subjects_65.mat');
+% Default input arguments
+if exist('ReportName', 'var') <= 0 || isempty(ReportName)
+    ReportName = 'class';
+end
+if exist('InterpFactor', 'var') <= 0 || isempty(InterpFactor)
+    InterpFactor = 1;
+end
+if exist('ThreshFactor', 'var') <= 0 || isempty(ThreshFactor)
+    ThreshFactor = [0.9579 0.4314];
+end
+
+% Read subject file - last column contains the paths to the subject dirs
+[ndata, text, raw] = xlsread(SubjectFile); clear ndata text;
+Subjects = raw(:, size(raw, 2));
 N_total = length(Subjects);
 
-% Init shared matrix
-Wmap=map([Np 1], {}, 0:Np-1);
-% Wmap=1; % Uncomment for sequential processing
-Over = zeros(N_total, 12, Wmap);
-
-% Get portion of matrix for this process
-OverLoc = local(Over);
-IdxLoc = global_ind(Over, 1);
+if exist(InputFileVar, 'var') > 0
+    % pMatlab setup - Init shared matrix
+    Wmap=map([Np 1], {}, 0:Np-1);
+    % Wmap=1; % Uncomment for sequential processing
+    Over = zeros(N_total, 1, Wmap);
+    % Get portion of matrix for this process
+    OverLoc = local(Over);
+    IdxLoc = global_ind(Over, 1);
+else
+    OverLoc = zeros(N_total, 1, 1);
+    IdxLoc = 1:N_total;
+end
 for idx_j = 1:size(OverLoc, 1);
 	idx_sub = IdxLoc(idx_j);
 	Subject = Subjects{idx_sub};
     fprintf('Subject: %s ...\n', Subject);
     
-    Out_name = [Subject '/' OutFile];
-    save_ps_figure(Out_name, []); % Delete previous file
+    ReportFile = [Subject '/' ReportName];
+    save_ps_figure(ReportFile, []); % Deletes previous file
 
-    % Read data
-    Name_roi_red = 'RO_mask';
-    Name_roi = [Subject '/' Name_roi_red];
-    S_roi = load_series(Name_roi, []);
+    % Read ROI
+    RoiName = 'RO_mask';
+    RoiFile = [Subject '/' RoiName];
+    S_roi = load_series(RoiFile, []);
     Roi = roi_init(S_roi);
-    S_roi = load_series(Name_roi, roi_nifti_sliceno(Roi, []));
+    S_roi = load_series_interp(RoiFile, roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
+    
+    % Read Reference
     try
-        Fe_name = 'FE_roi_mask';
-        S_ref = load_series([Subject '/' Fe_name], roi_nifti_sliceno(Roi, []));
+        FeName = 'FE_roi_mask';
+        S_ref = load_series_interp([Subject '/' FeName], roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
     catch
         S_ref = [];
     end
-    GRE_name = 'GRE_brain_restore';
-    S_gre = double(load_series([Subject '/' GRE_name], roi_nifti_sliceno(Roi, [])));
-    T1W_name = 'T1W_brain_restore';
-    S_t1w = double(load_series([Subject '/' T1W_name], roi_nifti_sliceno(Roi, [])));
     
-% 	SM_wm = logical(load_series([Subject '/WM_mask'], roi_nifti_sliceno(Roi, [])));
-%     [~, I_gre_wm_mu] = volume_stats(S_gre, SM_wm, [], [], []);
-%     TE = 15e-3;
-%     I_gre_thr = I_gre_wm_mu * exp(-15e-3*12.35);
-%     I_gre_thr = [];
+    % Read T2sw/T1w volumes
+    T2swName = 'GRE_brain_restore';
+    S_gre = double(load_series_interp([Subject '/' T2swName], roi_nifti_sliceno(Roi, []), 'fft', InterpFactor));
+    T1wName = 'T1W_brain_restore';
+    S_t1w = double(load_series_interp([Subject '/' T1wName], roi_nifti_sliceno(Roi, []), 'fft', InterpFactor));
     
-    % Segment
-    Lab = unique(S_roi)';
-    Lab = Lab(2:end); % Exclude background
-    Lab = Lab([3 1 2 4 7 5 6 8]);
-    N_lab = length(Lab);
+    % Initialize output variables and start segmentation
+    N_iter = length(RoiLabelTable);
     S_out_all = zeros(size(S_roi), class(S_roi));
     S_nontis_all = zeros(size(S_roi), class(S_roi));
     S_ntis_all = zeros(size(S_roi), class(S_roi));
-    I_means_est = zeros(N_lab, 2);
-    for idx_step = 1:2
-        idx_off = 4 * (idx_step-1);
-        Idx_lab = [1 2 3 4] + idx_off;
+    I_ntis_means = cell(N_iter, 1);
+    for idx_iter = 1:N_iter
+        Labs = RoiLabelTable{idx_iter};
+        N_labs = length(Labs);
         
-        % Heuristic to estimate the normal-appearing tissue means - works
-        % for GRE and T1W of LBC1936 protocol
-        I_ntis_means_all = NaN(length(Idx_lab), 2);
-        for idx_lab = 1:length(Idx_lab)
-            SM_tmp = S_roi==Lab(Idx_lab(idx_lab));
-            Mat = [S_gre(SM_tmp) S_t1w(SM_tmp)];
-            [~, I_ntis_means_all(idx_lab, :)] = pcomp_find(Mat);
-        end
-        Tmp = mcdregres(I_ntis_means_all(:, 2), I_ntis_means_all(:, 1), 'plots', 0);
-        Est_param = [Tmp.slope Tmp.int];
-        I_ntis_means_all_est = I_ntis_means_all;
-        I_ntis_means_all_est(:, 1) = polyval(Est_param, I_ntis_means_all(:, 2));
-        for idx_lab = 1:length(Idx_lab)
-            idx_cur = Idx_lab(idx_lab);
-            I_means_est(idx_cur, :) = I_ntis_means_all_est(idx_lab, :);
-        end
-        
+%         % Heuristic to estimate the normal-appearing tissue means - works
+%         % for GRE and T1W of LBC1936 protocol
+%         I_ntis_means_all = NaN(N_labs, 2);
+%         for idx_lab = 1:N_labs
+%             SM_tmp = S_roi == Labs(idx_lab);
+%             Mat = [S_gre(SM_tmp) S_t1w(SM_tmp)];
+%             [~, I_ntis_means_all(idx_lab, :)] = pcomp_find(Mat);
+%         end
+%         Tmp = mcdregres(I_ntis_means_all(:, 2), I_ntis_means_all(:, 1), 'plots', 0);
+%         Est_param = [Tmp.slope Tmp.int];
+%         I_ntis_means_all_est = I_ntis_means_all;
+%         I_ntis_means_all_est(:, 1) = polyval(Est_param, I_ntis_means_all(:, 2));
+       
         % Segmentation
-        [S_out, S_nontis, S_ntis, I_ntis_means_all(Idx_lab, :), I_gre_thr, I_gre_thr_ref] = ...
-            segment_us(S_gre, S_t1w, S_roi, S_ref, Lab(Idx_lab), I_means_est(Idx_lab, :), ...
-                       [], 'Out_name', Out_name, 'P_thr', [0.9579 0.4314]);
+        [S_out, S_nontis, S_ntis, I_ntis_means_iter] = segment_us(...
+                                S_gre, S_t1w, S_roi, S_ref, Labs, [], [], ...
+                                'Out_name', ReportFile, 'P_thr', ThreshFactor);
+                   
+        % Store results
         S_out_all = S_out_all + S_out;
         S_nontis_all = S_nontis_all + S_nontis;
         S_ntis_all = S_ntis_all + S_ntis;
-        OverLoc(idx_j, (idx_step-1)*6+1) = I_gre_thr;
-        OverLoc(idx_j, (idx_step-1)*6+2:(idx_step-1)*6+6) = I_gre_thr_ref;
+        I_ntis_means{idx_iter} = I_ntis_means_iter;
+        OverLoc(idx_j) = idx_j;
     end
     
     % Summary plot
-	H = create_ps_figure; %figure;
+	H = figure; %create_ps_figure;
 	Col = [[0, 0, 0]; hsv(3)];
     scatter(S_gre(logical(S_roi)), S_t1w(logical(S_roi)), 10, Col(1, :));
     hold on;
-    scatter(I_ntis_means_all(:, 1), I_ntis_means_all(:, 2), 20, 'r');
-    scatter(I_means_est(:, 1), I_means_est(:, 2), 20, 'g');
+    for idx_iter = 1:N_iter
+        I_ntis_means_iter = I_ntis_means{idx_iter};
+        scatter(I_ntis_means_iter(:, 1), I_ntis_means_iter(:, 2), 20, 'r');
+    end
     SM_out = logical(S_out_all);
     Mat = [S_gre(SM_out) S_t1w(SM_out)];
 	scatter(Mat(:, 1), Mat(:, 2), 10, Col(2, :));
@@ -144,30 +144,42 @@ for idx_j = 1:size(OverLoc, 1);
     end
     title(sprintf('Sum: %d', sum(SM_out(:))));
     axis equal;
-    save_ps_figure(Out_name, H);
+    save_ps_figure(ReportFile, H);
     
-    % Save results
-	Out_name = 'Oli_us_mask';
-    save_series([Subject '/' Name_roi_red], [Subject '/' Out_name], S_out_all, roi_nifti_sliceno(Roi, []));
-    save_series([Subject '/' Name_roi_red], [Subject '/NonTis_mask'], S_nontis_all, roi_nifti_sliceno(Roi, []));
-    save_series([Subject '/' Name_roi_red], [Subject '/NormTis_mask'], S_ntis_all, roi_nifti_sliceno(Roi, []));
+    % Save hypomask
+	T2swHypoMaskName = 'T2swHypo_mask';
+    S_out_all = interp_series([Subject '/' RoiName], S_out_all, ...
+                    roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
+    [SM_oli] = morph_filter([Subject '/' T2swName], ...
+                        roi_nifti_sliceno(Roi, []), logical(S_out_all));
+    S_out_all(~SM_oli) = 0;
+    save_series([Subject '/' RoiName], [Subject '/' T2swHypoMaskName], ...
+                S_out_all, roi_nifti_sliceno(Roi, []));
+    % Save non tissue mask
+    save_series_interp([Subject '/' RoiName], [Subject '/NonTis_mask'], ...
+                        S_nontis_all, roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
+    % Save norm tissue mask
+    save_series_interp([Subject '/' RoiName], [Subject '/NormTis_mask'], ...
+                        S_ntis_all, roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
     
-%     preproc([], 1, Subject, T1W_name, GRE_name, ...
-%             'WM_mask', 'GM_mask', 'CS_mask', Out_name, Name_roi_red, ...
-%             'AR_mask', []);
-    
+	% Validate
     if ~isempty(S_ref)
-        Ret = validate(Subject, Out_name, Fe_name, [], Name_roi_red, 1);
+        Ret = validate(Subject, T2swHypoMaskName, FeName, [], RoiName, 1);
         save([Subject '/Ret.mat'], 'Ret');
     else
-        Ret = validate(Subject, Out_name, Out_name, [], Name_roi_red, 1);
+        % Fake validation just to get the volume
+        Ret = validate(Subject, T2swHypoMaskName, T2swHypoMaskName, [], RoiName, 1);
         save([Subject '/Ret.mat'], 'Ret');
     end
 end
 
-% Aggregate shared matrix
-Over = put_local(Over, OverLoc);
-Over = agg(Over);
+if exist(InputFileVar, 'var') > 0
+    % pMatlab exit - Aggregate shared matrix
+    Over = put_local(Over, OverLoc);
+    Over = agg(Over);
+else
+    Over = OverLoc;
+end
 
 % Collect result data in parent process (Pid=0)
 if ~Pid && ~isempty(S_ref)

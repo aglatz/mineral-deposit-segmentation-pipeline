@@ -54,8 +54,6 @@ I_ntis_means = zeros(N_lab, 2);
 Chi2_thr = [];
 % Linear polynomial for adjusting the threshold
 P_thr = [1 0];
-% Minimum contrast of a connected component
-cont_min = -0.001;
 % Name of file were plots get saved to
 Out_name = 'segment_us_plots';
 % Process optional args
@@ -89,7 +87,7 @@ for idx_lab = 1:N_lab
     end
     
     % Figure for scatter and chi2 plots
-    H = create_ps_figure;  %figure;
+    H = figure; %create_ps_figure;  %figure;
 
     % Plot all tissue intensities
     subplot(2, 1, 1);
@@ -97,7 +95,13 @@ for idx_lab = 1:N_lab
     hold on;
     
 	% Get approximately normally distributed intensities
-    [SM_antis, GM_2] = get_antissue(S_gre, S_t1w, SM_voi, I_ntis_means_est(idx_lab, :), 2);
+    if isempty(I_ntis_means_est)
+        I_ntis_mean_est = [];
+    else
+        I_ntis_mean_est = I_ntis_means_est(idx_lab, :);
+    end
+%     [SM_antis, GM_2] = get_antissue(S_gre, S_t1w, SM_voi, I_ntis_mean_est, 2);
+    [SM_antis, GM_2] = get_antissue(S_gre, S_t1w, SM_voi, I_ntis_mean_est, 1);
     
     % Plot approximately normally distributed intensities
     if ~isempty(GM_2)
@@ -116,7 +120,7 @@ for idx_lab = 1:N_lab
     end
     
     % Get normal tissue, candidate outliers and thresholds
-    [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_ntis_means(idx_lab, :), C_ntis] = ...
+    [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, I_ntis_means(idx_lab, :), C_ntis] = ...
         get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi, Chi2_thr);
     S_oli_all = S_oli_all + cast(SM_oli, class(S_oli_all)) .* Lab(idx_lab);
     S_ntis = S_ntis + cast(SM_ntis, class(S_ntis)) .* Lab(idx_lab);
@@ -127,7 +131,7 @@ for idx_lab = 1:N_lab
         if Lab(idx_lab) == Lab(1)
             % Derive Threshold from GP
             [SM_oli_filt, I_gre_thr] = ...
-                morph_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, [], P_thr, 1, SM_voi, cont_min);
+                thresh_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_t1w_max, [], P_thr, 1);
             
             % Save reference GP intensity percentiles
             if sum(SM_ref(:)) > 0
@@ -135,11 +139,11 @@ for idx_lab = 1:N_lab
             end
         else
             [SM_oli_filt] = ...
-                morph_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_gre_thr, [], 1, SM_voi, cont_min);
+                thresh_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_t1w_max, I_gre_thr, [], 1);
         end
     else
         [SM_oli_filt] = ...
-                morph_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_gre_thr, [], 0, SM_voi, cont_min);
+                thresh_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_t1w_max, I_gre_thr, [], 0);
     end
     
     % Plot missclassification error
@@ -210,7 +214,8 @@ MD_ntis_oli = MD_ntis_oli_ref(SM_ntis_oli(SM_ntis_oli_ref));
 
 %% Morphological filtering to remove outliers from segmentation, imaging and vessels 
 function [SM_oli, I_gre_thr] = ...
-    morph_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_gre_thr, P_thr, adj_thr, SM_voi, cont_min)
+    thresh_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_t1w_max, ...
+                  I_gre_thr, P_thr, adj_thr)
 
 Mat = [S_gre(SM_oli) S_t1w(SM_oli)];
 
@@ -227,7 +232,8 @@ end
 
 % apply T1W&GRE thresholds (soft)
 SM_tmp_red = SM_oli;
-SM_tmp_red(SM_oli) = Mat(:, 1) < I_gre_thr & Mat(:, 2) > I_t1w_min;
+SM_tmp_red(SM_oli) = Mat(:, 1) < I_gre_thr ...
+                     & Mat(:, 2) > I_t1w_min & Mat(:, 2) < I_t1w_max;
 % apply GRE threshold (hard)
 SM_oli(SM_oli) = Mat(:, 1) < I_gre_thr;
 
@@ -244,23 +250,11 @@ for idx_lab = 1:N_lab
         SM_oli = SM_oli | L == Lab(idx_lab);
     end
 end
-% Filter out low contrast CC
-L = conncomp_init(SM_oli, 3);
-CC = conncomp_list(L, L, SM_voi, S_gre, [1 1 1]);
-if CC(1).lab > -1
-    M = [CC.cont] < cont_min;
-    Lab = [CC(M).lab]';
-    N_lab = length(Lab);
-    SM_oli = false(size(SM_oli));
-    for idx_lab = 1:N_lab
-        SM_oli = SM_oli | L == Lab(idx_lab);
-    end
-end
 fprintf('After: %d.\n', sum(SM_oli(:)));
 
 
 %% Split normal and outlier intensities
-function [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_ntis_mean, C_ntis] = ...
+function [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, I_ntis_mean, C_ntis] = ...
     get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi, Chi2_thr)
 
 Mat = [S_gre(SM_antis) S_t1w(SM_antis)];
@@ -281,7 +275,7 @@ SM_oli = SM_voi;
 SM_oli(SM_voi) = ~M;
 
 % Thresholds
-[I_gre_min, I_t1w_min] = ellipsplot_mod(I_ntis_mean, C_ntis, Mat, 'r', Chi2_thr);
+[I_gre_min, I_t1w_min, I_t1w_max] = ellipsplot_mod(I_ntis_mean, C_ntis, Mat, 'r', Chi2_thr);
 pcomp_plot(I_ntis_mean, I_ntis_sd, 'b');
 
 
