@@ -1,5 +1,5 @@
-function [RetAll,Subjects] = segment_us_mp(SubjectFile, RoiLabelTable, N_cpus, ...
-                                           varargin)
+function [RetAll, Subjects, Over] = segment_us_mp(SubjectFile, RoiLabelTable, N_cpus, ...
+                                                  varargin)
 % Function that calls pSegment.m (see its documentation for further info!).
 % This function can parallelize the segmentation across CPU cores using
 % pMatlab (see http://www.ll.mit.edu/mission/isr/pmatlab ) if N_cpus > 1.

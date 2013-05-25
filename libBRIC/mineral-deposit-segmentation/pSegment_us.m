@@ -52,12 +52,12 @@ if exist(InputFileVar, 'var') > 0
     % pMatlab setup - Init shared matrix
     Wmap=map([Np 1], {}, 0:Np-1);
     % Wmap=1; % Uncomment for sequential processing
-    Over = zeros(N_total, 1, Wmap);
+    Over = zeros(N_total, length(RoiLabelTable)*2, Wmap);
     % Get portion of matrix for this process
     OverLoc = local(Over);
     IdxLoc = global_ind(Over, 1);
 else
-    OverLoc = zeros(N_total, 1, 1);
+    OverLoc = zeros(N_total, length(RoiLabelTable)*2, 1);
     IdxLoc = 1:N_total;
 end
 for idx_j = 1:size(OverLoc, 1);
@@ -113,7 +113,7 @@ for idx_j = 1:size(OverLoc, 1);
 %         I_ntis_means_all_est(:, 1) = polyval(Est_param, I_ntis_means_all(:, 2));
        
         % Segmentation
-        [S_out, S_nontis, S_ntis, I_ntis_means_iter] = segment_us(...
+        [S_out, S_nontis, S_ntis, I_ntis_means_iter, I_gre_thr] = segment_us(...
                                 S_gre, S_t1w, S_roi, S_ref, Labs, [], [], ...
                                 'Out_name', ReportFile, 'P_thr', ThreshFactor);
                    
@@ -122,7 +122,19 @@ for idx_j = 1:size(OverLoc, 1);
         S_nontis_all = S_nontis_all + S_nontis;
         S_ntis_all = S_ntis_all + S_ntis;
         I_ntis_means{idx_iter} = I_ntis_means_iter;
-        OverLoc(idx_j) = idx_j;
+        Idx_over = (idx_iter-1)*N_iter + [1:2];
+        OverLoc(idx_j, Idx_over(1)) = I_gre_thr;
+        if ~isempty(S_ref)
+            SM_tmp1 = false(size(S_out));
+            for lab = Labs
+                SM_tmp1 = SM_tmp1 | S_out == lab;
+            end
+            SM_tmp2 = false(size(S_ref));
+            for lab = Labs
+                SM_tmp2 = SM_tmp2 | S_ref == lab;
+            end
+            OverLoc(idx_j, Idx_over(2)) = quantile(S_gre(SM_tmp1 & SM_tmp2), .95); 
+        end
     end
     
     % Summary plot

@@ -50,8 +50,6 @@ S_oli_all = zeros(size(S_voi), class(S_voi));
 S_ntis = zeros(size(S_voi), class(S_voi));
 % Robust normal tissue means
 I_ntis_means = zeros(N_lab, 2);
-% Chi2 for given area under Chi2 distribution with 2 deg freedom
-Chi2_thr = [];
 % Linear polynomial for adjusting the threshold
 P_thr = [1 0];
 % Name of file were plots get saved to
@@ -62,8 +60,6 @@ for idx_vain = 1:N_vain
     arg_in = varargin{idx_vain};
     if ischar(arg_in) || isscalar(arg_in)
         switch arg_in
-            case {'Chi2_thr'}
-                Chi2_thr = varargin{idx_vain+1};
             case {'Out_name'}
                 Out_name = varargin{idx_vain+1};
             case {'P_thr'}
@@ -121,7 +117,7 @@ for idx_lab = 1:N_lab
     
     % Get normal tissue, candidate outliers and thresholds
     [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, I_ntis_means(idx_lab, :), C_ntis] = ...
-        get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi, Chi2_thr);
+        get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi);
     S_oli_all = S_oli_all + cast(SM_oli, class(S_oli_all)) .* Lab(idx_lab);
     S_ntis = S_ntis + cast(SM_ntis, class(S_ntis)) .* Lab(idx_lab);
     
@@ -153,10 +149,11 @@ for idx_lab = 1:N_lab
 	scatter(S_gre(SM_ref & ~SM_oli_filt), S_t1w(SM_ref & ~SM_oli_filt), 10, Col(4, :));
     xlabel('\bf T2*W in arb. units');
     ylabel('\bf T1W in arb. units');
-    h(1) = line_with_label(I_gre_thr, 'thr=', 'g', max(S_t1w(SM_voi)), [], 1, 'v');
-    I_tmp = quantile(S_gre(SM_ref), .95);
+    I_tmp = quantile(S_gre(SM_oli_filt), .5);
+    h(1) = line_with_label(I_tmp, 'thr=', 'g', max(S_t1w(SM_voi)), [], 1, 'v');
+    I_tmp = quantile(S_gre(SM_ref), .5);
     h(2) = line_with_label(I_tmp, 'thr=', '--b', max(S_t1w(SM_voi)), [], 1, 'v');
-    legend(h, {'Estimated', 'Reference'}, 'Location', 'best');
+    legend(h, {'Estimated median', 'Reference median'}, 'Location', 'best');
 
     % Plot mahalanobis against chi2
     subplot(2, 1, 2);
@@ -238,6 +235,9 @@ SM_tmp_red(SM_oli) = Mat(:, 1) < I_gre_thr ...
 SM_oli(SM_oli) = Mat(:, 1) < I_gre_thr;
 
 fprintf('Before: %d ...', sum(SM_oli(:)));
+% for slice = 1:size(SM_oli, 3)
+%     SM_oli(:, :, slice) = bwfill(SM_oli(:, :, slice), 'holes');
+% end
 % Fill holes
 L = conncomp_init(SM_oli, 3);
 Lab = unique(L)';
@@ -255,30 +255,41 @@ fprintf('After: %d.\n', sum(SM_oli(:)));
 
 %% Split normal and outlier intensities
 function [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, I_ntis_mean, C_ntis] = ...
-    get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi, Chi2_thr)
+    get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi)
 
 Mat = [S_gre(SM_antis) S_t1w(SM_antis)];
 
 % Mean and covariance of approx. normal distr. tissue
 [~, I_ntis_mean, I_ntis_sd, ~, ~, C_ntis] = pcomp_find(Mat);
-if isempty(Chi2_thr)
-    Chi2_thr = get_chi2_thr(2, size(Mat, 1));
+
+% Find outliers according to Filzmoser, Reimann, Garrett (2003).
+RD = mahalanobis(Mat, I_ntis_mean, 'cov', C_ntis);
+[Gn, u] = ecdf(RD);
+G = chi2cdf(u, size(Mat, 2));
+delta = chi2inv(0.975, size(Mat, 2)); % Only simulation values for 97.5%
+dG = G - Gn;
+pn = max(dG(u >= delta & dG >= 0));
+an = 0;
+if ~isempty(pn)
+    pcrit = (0.24 - 0.003 * size(Mat, 2))/sqrt(size(Mat, 1));
+    if pn > pcrit
+        an = pn;
+    end    
+end
+RD_cutoff = u(find(Gn > (1-an), 1));
+if isempty(RD_cutoff)
+    RD_cutoff = max(RD);
 end
 
-% Split normal tissue and outliers
-Mat = [S_gre(SM_voi) S_t1w(SM_voi)];
-Chi2 = get_chi_right_tail(Mat', I_ntis_mean, C_ntis);
-M = Chi2(:) < Chi2_thr;
+% Thresholding
+M = RD <= RD_cutoff;
 SM_ntis = SM_voi;
 SM_ntis(SM_voi) = M;
 SM_oli = SM_voi;
 SM_oli(SM_voi) = ~M;
 
-% Thresholds
-[I_gre_min, I_t1w_min, I_t1w_max] = ellipsplot_mod(I_ntis_mean, C_ntis, Mat, 'r', Chi2_thr);
+% Show thresholds
+ellipsplot_mod(I_ntis_mean, C_ntis, Mat, 'b', delta);
+[I_gre_min, I_t1w_min, I_t1w_max] = ellipsplot_mod(I_ntis_mean, C_ntis, Mat, 'r', RD_cutoff);
 pcomp_plot(I_ntis_mean, I_ntis_sd, 'b');
 
-
-%%
-function [chi2_thr] = get_chi2_thr(p, n)
-chi2_thr = chi2inv(1-(0.24-0.003*p)/sqrt(n), p);
