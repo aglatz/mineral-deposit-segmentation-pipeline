@@ -20,21 +20,36 @@ Z_new_slices = Z_new(M_z_new_slices);
 
 switch method
     case 'fft'
-        if size(S_orig_data, 3) == length(Z_old)
+        if ~sum(size(S_orig_data) - [length(X_old) length(Y_old) length(Z_old)])
             S_tmp = fftInterpolate( double(S_orig_data), ...
                                     [length(Y_new) length(X_new) length(Z_new)]);
             S = cast(S_tmp(:, :, M_z_new_slices), S_orig_type);
         else
+            % currently does not support downsampling
             error('interp_series:input', 'Input data size missmatch!');
         end
     otherwise
-        [Xo, Yo, Zo] = meshgrid(X_old, Y_old, Z_old_slices);
-        [Xn, Yn, Zn] = meshgrid(X_new, Y_new, Z_new_slices);
-        if size(S_orig_data, 3) == length(Z_old_slices)
-            S_tmp = double(S_orig_data);
+        if ~sum(size(S_orig_data) - [length(X_old) length(Y_old) length(Z_old)])
+            % prepare grids
+            [Xo, Yo, Zo] = meshgrid(X_old, Y_old, Z_old_slices);
+            [Xn, Yn, Zn] = meshgrid(X_new, Y_new, Z_new_slices);
+            % prepare original data
+            if size(S_orig_data, 3) == length(Z_old_slices)
+                S_tmp = double(S_orig_data);
+            else
+                if size(S_orig_data, 3) > length(Z_old_slices)
+                    S_tmp = double(S_orig_data(:, :, slices));
+                else
+                    error('interp_series:input', 'Input data size missmatch!');
+                end
+            end
         else
-            if size(S_orig_data, 3) > length(Z_old_slices)
-                S_tmp = double(S_orig_data(:, :, slices));
+            if ~sum(size(S_orig_data) - [length(X_new) length(Y_new) length(Z_new_slices)])
+                % prepare grids
+                [Xo, Yo, Zo] = meshgrid(X_new, Y_new, Z_new_slices);    
+                [Xn, Yn, Zn] = meshgrid(X_old, Y_old, Z_old_slices);
+                % prepare original data
+                S_tmp = double(S_orig_data);
             else
                 error('interp_series:input', 'Input data size missmatch!');
             end
