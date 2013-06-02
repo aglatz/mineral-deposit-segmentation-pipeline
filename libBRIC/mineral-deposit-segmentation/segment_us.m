@@ -1,6 +1,5 @@
-function [S_out, S_oli_all, S_ntis, I_ntis_means, I_gre_thr, I_gre_thr_ref] =...
-    segment_us(S_gre, S_t1w, S_voi, S_ref, Lab, I_ntis_means_est, I_gre_thr, ...
-               varargin)
+function [Ret] = segment_us(S_gre, S_t1w, S_voi, S_ref, Lab, ...
+                            I_ntis_means_est, I_gre_thr, varargin)
 % Unsupervised segmentation of hypointense outlier signal intensities on GRE,
 % which are likely iron deposits or calcifications. Requires GRE and T1-weighted
 % volumes as input. T1-weighted volumes are used to separate hypointensities
@@ -29,27 +28,31 @@ function [S_out, S_oli_all, S_ntis, I_ntis_means, I_gre_thr, I_gre_thr_ref] =...
 %                     circumvents the calculation of the adaptive threshold
 % OPTIONAL INPUTS: Out_name - File name of the ps file where the plots
 %                             summary the performance statistics are saved.
-% RETURNS: S_out - The basal ganglia hypointensity masks
-%          S_oli_all - The outlier masks
+% RETURN STRUCTURE ELEMENTS:
+%          S_out - The basal ganglia hypointensity masks
+%          S_nontis - The outlier masks
 %          S_ntis - The masks of normal-appearing tissues
 %          I_ntis_means - GRE and T1W robust mean intensities of the 
 %                         normal-appearing tissue.
 %          I_gre_thr - The derived GRE segmentation thresholds
-%          I_gre_thr_ref - The GRE reference thresholds
 %
 
 % ROI labels - Threshold I_gre_min_min is derived from the first label
 N_lab = length(Lab);
 % Colors for the plot: black - background, green - ok, red - not ok, blue - missing
 Col = [[0, 0, 0]; hsv(3)];
+% Return structure
+Ret = struct;
 % Masks that selects the hypointense outlier intensities
-S_out = zeros(size(S_voi), class(S_voi));
+Ret.S_out = zeros(size(S_voi), class(S_voi));
+Ret.S_out_hypo = zeros(size(S_voi), class(S_voi));
+Ret.S_out_hyper = zeros(size(S_voi), class(S_voi));
 % Mask that selects tissue intensities not belonging to a specific label
-S_oli_all = zeros(size(S_voi), class(S_voi));
+Ret.S_nontis = zeros(size(S_voi), class(S_voi));
 % Mask selecting normal tissue
-S_ntis = zeros(size(S_voi), class(S_voi));
+Ret.S_ntis = zeros(size(S_voi), class(S_voi));
 % Robust normal tissue means
-I_ntis_means = zeros(N_lab, 2);
+Ret.I_ntis_means = zeros(N_lab, 2);
 % Linear polynomial for adjusting the threshold
 P_thr = [1 0];
 % Name of file were plots get saved to
@@ -67,10 +70,6 @@ for idx_vain = 1:N_vain
         end
     end
 end
-
-% Reference intensity percentiles
-Pctls = [.7 .75 .8 .85 .9];
-I_gre_thr_ref = NaN(1, length(Pctls));
 
 % --- Main loop ---
 for idx_lab = 1:N_lab
@@ -116,29 +115,24 @@ for idx_lab = 1:N_lab
     end
     
     % Get normal tissue, candidate outliers and thresholds
-    [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, I_ntis_means(idx_lab, :), C_ntis] = ...
+    [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, Ret.I_ntis_means(idx_lab, :), C_ntis] = ...
         get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi);
-    S_oli_all = S_oli_all + cast(SM_oli, class(S_oli_all)) .* Lab(idx_lab);
-    S_ntis = S_ntis + cast(SM_ntis, class(S_ntis)) .* Lab(idx_lab);
+    Ret.S_nontis = Ret.S_nontis + cast(SM_oli, class(Ret.S_nontis)) .* Lab(idx_lab);
+    Ret.S_ntis = Ret.S_ntis + cast(SM_ntis, class(Ret.S_ntis)) .* Lab(idx_lab);
     
     % Filter out outliers from segmentation, imaging and vessels.
     if isempty(I_gre_thr)
         % Derive threshold from first ROI
         if Lab(idx_lab) == Lab(1)
             % Derive Threshold from GP
-            [SM_oli_filt, I_gre_thr] = ...
+            [SM_oli_filt, Ret.I_gre_thr, SM_oli_filt_t1whypo, SM_oli_filt_t1whyper] = ...
                 thresh_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_t1w_max, [], P_thr, 1);
-            
-            % Save reference GP intensity percentiles
-            if sum(SM_ref(:)) > 0
-                I_gre_thr_ref = quantile(S_gre(SM_ref), Pctls);
-            end
         else
-            [SM_oli_filt] = ...
-                thresh_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_t1w_max, I_gre_thr, [], 1);
+            [SM_oli_filt, tmp, SM_oli_filt_t1whypo, SM_oli_filt_t1whyper] = ...
+                thresh_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_t1w_max, Ret.I_gre_thr, [], 1);
         end
     else
-        [SM_oli_filt] = ...
+        [SM_oli_filt, Ret.I_gre_thr, SM_oli_filt_t1whypo, SM_oli_filt_t1whyper] = ...
                 thresh_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_t1w_max, I_gre_thr, [], 0);
     end
     
@@ -157,10 +151,12 @@ for idx_lab = 1:N_lab
 
     % Plot mahalanobis against chi2
     subplot(2, 1, 2);
-    plot_mahalanobis(S_gre, S_t1w, SM_ntis, SM_oli_filt, SM_ref, I_ntis_means(idx_lab, :), C_ntis);
+    plot_mahalanobis(S_gre, S_t1w, SM_ntis, SM_oli_filt, SM_ref, Ret.I_ntis_means(idx_lab, :), C_ntis);
 
     % Save result
-    S_out = S_out + cast(SM_oli_filt, class(S_out)) .* Lab(idx_lab);
+    Ret.S_out = Ret.S_out + cast(SM_oli_filt, class(Ret.S_out)) .* Lab(idx_lab);
+    Ret.S_out_hypo = Ret.S_out_hypo + cast(SM_oli_filt_t1whypo, class(Ret.S_out_hypo)) .* Lab(idx_lab);
+    Ret.S_out_hyper = Ret.S_out_hyper + cast(SM_oli_filt_t1whyper, class(Ret.S_out_hyper)) .* Lab(idx_lab);
     
     % save figure
 	save_ps_figure(Out_name, H);
@@ -210,12 +206,9 @@ MD_ntis_oli = MD_ntis_oli_ref(SM_ntis_oli(SM_ntis_oli_ref));
 
 
 %% Morphological filtering to remove outliers from segmentation, imaging and vessels 
-function [SM_oli, I_gre_thr] = ...
+function [SM_oli, I_gre_thr, SM_oli_t1whypo, SM_oli_t1whyper] = ...
     thresh_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_t1w_max, ...
                   I_gre_thr, P_thr, adj_thr)
-
-Mat = [S_gre(SM_oli) S_t1w(SM_oli)];
-
 % Derive threshold if not given
 if isempty(I_gre_thr)
     I_gre_thr = polyval(P_thr, I_gre_min);
@@ -227,30 +220,23 @@ if adj_thr && I_gre_thr > I_gre_min
     I_gre_thr = I_gre_min;
 end
 
-% apply T1W&GRE thresholds (soft)
-SM_tmp_red = SM_oli;
-SM_tmp_red(SM_oli) = Mat(:, 1) < I_gre_thr ...
-                     & Mat(:, 2) > I_t1w_min & Mat(:, 2) < I_t1w_max;
-% apply GRE threshold (hard)
-SM_oli(SM_oli) = Mat(:, 1) < I_gre_thr;
-
-fprintf('Before: %d ...', sum(SM_oli(:)));
-% for slice = 1:size(SM_oli, 3)
-%     SM_oli(:, :, slice) = bwfill(SM_oli(:, :, slice), 'holes');
-% end
-% Fill holes
-L = conncomp_init(SM_oli, 3);
-Lab = unique(L)';
-Lab = Lab(2:end);
-Lab_red = unique(L(SM_tmp_red))';
-N_lab = length(Lab);
-SM_oli = false(size(SM_tmp_red));
-for idx_lab = 1:N_lab
-    if sum(ismember(Lab(idx_lab), Lab_red))
-        SM_oli = SM_oli | L == Lab(idx_lab);
-    end
-end
+% Morphological reconstruction
+Mat = [S_gre(SM_oli) S_t1w(SM_oli)];
+SM_oli_marker = SM_oli; % Marker volume: apply T1W&GRE thresholds (soft)
+SM_oli_marker(SM_oli) = Mat(:, 1) < I_gre_thr ...
+                        & Mat(:, 2) > I_t1w_min & Mat(:, 2) < I_t1w_max;
+SM_oli(SM_oli) = Mat(:, 1) < I_gre_thr; % Mask volume: apply GRE threshold (hard)
+fprintf('Before morph. recon.: %d ...', sum(SM_oli(:)));
+SM_oli = imreconstruct(SM_oli_marker, SM_oli, 6);
 fprintf('After: %d.\n', sum(SM_oli(:)));
+
+% Save regions that are hypo- or hyperintense on T1w
+Mat = [S_gre(SM_oli) S_t1w(SM_oli)];
+SM_oli_t1whypo = SM_oli;
+SM_oli_t1whypo(SM_oli) = Mat(:, 2) <= I_t1w_min;
+SM_oli_t1whyper = SM_oli;
+SM_oli_t1whyper(SM_oli) = Mat(:, 2) >= I_t1w_max;
+
 
 
 %% Split normal and outlier intensities
@@ -290,6 +276,11 @@ SM_oli(SM_voi) = ~M;
 
 % Show thresholds
 ellipsplot_mod(I_ntis_mean, C_ntis, Mat, 'b', delta);
-[I_gre_min, I_t1w_min, I_t1w_max] = ellipsplot_mod(I_ntis_mean, C_ntis, Mat, 'r', RD_cutoff);
+ellipsplot_mod(I_ntis_mean, C_ntis, Mat, 'r', RD_cutoff);
 pcomp_plot(I_ntis_mean, I_ntis_sd, 'b');
+
+% Calculate exact thresholds
+I_gre_min = -sqrt(C_ntis(1,1)*RD_cutoff)+I_ntis_mean(1);
+I_t1w_min = -sqrt(C_ntis(2,2)*RD_cutoff)+I_ntis_mean(2);
+I_t1w_max = +sqrt(C_ntis(2,2)*RD_cutoff)+I_ntis_mean(2);
 

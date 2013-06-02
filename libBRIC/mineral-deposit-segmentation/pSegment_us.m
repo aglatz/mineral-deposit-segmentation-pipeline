@@ -75,6 +75,12 @@ for idx_j = 1:size(OverLoc, 1);
     Roi = roi_init(S_roi);
     S_roi = load_series_interp(RoiFile, roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
     
+%     % Pool signal intensities from corresponding left and right hemisphere structures
+%     S_roi(S_roi == 50) = 11;
+%     S_roi(S_roi == 51) = 12;
+%     S_roi(S_roi == 52) = 13;
+%     S_roi(S_roi == 55) = 14;
+    
     % Read Reference
     try
         FeName = 'FE_roi_mask';
@@ -92,6 +98,8 @@ for idx_j = 1:size(OverLoc, 1);
     % Initialize output variables and start segmentation
     N_iter = length(RoiLabelTable);
     S_out_all = zeros(size(S_roi), class(S_roi));
+    S_out_hypo_all = zeros(size(S_roi), class(S_roi));
+    S_out_hyper_all = zeros(size(S_roi), class(S_roi));
     S_nontis_all = zeros(size(S_roi), class(S_roi));
     S_ntis_all = zeros(size(S_roi), class(S_roi));
     I_ntis_means = cell(N_iter, 1);
@@ -113,21 +121,22 @@ for idx_j = 1:size(OverLoc, 1);
 %         I_ntis_means_all_est(:, 1) = polyval(Est_param, I_ntis_means_all(:, 2));
        
         % Segmentation
-        [S_out, S_nontis, S_ntis, I_ntis_means_iter, I_gre_thr] = segment_us(...
-                                S_gre, S_t1w, S_roi, S_ref, Labs, [], [], ...
-                                'Out_name', ReportFile, 'P_thr', ThreshFactor);
+        Ret = segment_us(S_gre, S_t1w, S_roi, S_ref, Labs, [], [], ...
+                         'Out_name', ReportFile, 'P_thr', ThreshFactor);
                    
         % Store results
-        S_out_all = S_out_all + S_out;
-        S_nontis_all = S_nontis_all + S_nontis;
-        S_ntis_all = S_ntis_all + S_ntis;
-        I_ntis_means{idx_iter} = I_ntis_means_iter;
+        S_out_all = S_out_all + Ret.S_out;
+        S_out_hypo_all = S_out_hypo_all + Ret.S_out_hypo;
+        S_out_hyper_all = S_out_hyper_all + Ret.S_out_hyper;
+        S_nontis_all = S_nontis_all + Ret.S_nontis;
+        S_ntis_all = S_ntis_all + Ret.S_ntis;
+        I_ntis_means{idx_iter} = Ret.I_ntis_means;
         Idx_over = (idx_iter-1)*N_iter + [1:2];
-        OverLoc(idx_j, Idx_over(1)) = I_gre_thr;
+        OverLoc(idx_j, Idx_over(1)) = Ret.I_gre_thr;
         if ~isempty(S_ref)
-            SM_tmp1 = false(size(S_out));
+            SM_tmp1 = false(size(Ret.S_out));
             for lab = Labs
-                SM_tmp1 = SM_tmp1 | S_out == lab;
+                SM_tmp1 = SM_tmp1 | Ret.S_out == lab;
             end
             SM_tmp2 = false(size(S_ref));
             for lab = Labs
@@ -162,11 +171,21 @@ for idx_j = 1:size(OverLoc, 1);
 	T2swHypoMaskName = 'T2swHypo_mask';
     S_out_all = interp_series([Subject '/' RoiName], S_out_all, ...
                     roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
+	S_out_hypo_all = interp_series([Subject '/' RoiName], S_out_hypo_all, ...
+                    roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
+	S_out_hyper_all = interp_series([Subject '/' RoiName], S_out_hyper_all, ...
+                    roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
     [SM_oli] = morph_filter([Subject '/' T2swName], ...
                         roi_nifti_sliceno(Roi, []), logical(S_out_all));
     S_out_all(~SM_oli) = 0;
+    S_out_hypo_all(~SM_oli) = 0;
+    S_out_hyper_all(~SM_oli) = 0;
     save_series([Subject '/' RoiName], [Subject '/' T2swHypoMaskName], ...
                 S_out_all, roi_nifti_sliceno(Roi, []));
+	save_series([Subject '/' RoiName], [Subject '/T2swHypoT1wHypo_mask'], ...
+                S_out_hypo_all, roi_nifti_sliceno(Roi, []));
+	save_series([Subject '/' RoiName], [Subject '/T2swHypoT1wHyper_mask'], ...
+                S_out_hyper_all, roi_nifti_sliceno(Roi, []));
     % Save non tissue mask
     save_series_interp([Subject '/' RoiName], [Subject '/NonTis_mask'], ...
                         S_nontis_all, roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
