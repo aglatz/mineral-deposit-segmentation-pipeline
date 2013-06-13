@@ -1,4 +1,4 @@
-function Idx = blandAltmanPlot(A,B, varargin)
+function [Idx, avg, SD] = blandAltmanPlot(A,B, varargin)
 %reference: Y H Chan, Biostatistics 104:
 %Correlational Analysis,
 %Singapore Med J 2003 Vol 44(12) : 614-619
@@ -11,53 +11,58 @@ end
 M = isnan(difff);
 meanAB(M)=[];
 difff(M)=[];
-%Q = quantile(difff, [.05 .5 .95]);
-meanDiff=mloclogist(difff);
-stdDiff=mscalelogist(difff);
 
-f = 1.95;
-meanp2D=meanDiff+f*stdDiff;
-meanm2D=meanDiff-f*stdDiff;
-n=length(difff);
-minD=min(meanAB)-0.1;
-maxD=max(meanAB)+0.1;
+% Transform data
+[meanAB_sorted, meanAB_sorted_idx] = sort(meanAB);
+x_old = (meanAB_sorted(:));
+y_old = difff(meanAB_sorted_idx)';
+x = log10(x_old);
+y = y_old;
 
-figure;
-scatter(meanAB, difff, 20, 'k');
-%V_low=quantile(B(~M), .25);
-M_low=B(~M)<40;
-hold on;
-M = abs(difff-meanDiff) > f*stdDiff;
-Idx = find(M);
-for idx = 1:sum(M)
-    text(meanAB(Idx(idx)), difff(Idx(idx)), num2str(Idx(idx)));
+% Quantile regression
+[p, stats] = quantreg(x, y, .5);
+middle_sorted = polyval(p, x);
+[p_upper, stats] = quantreg(x, y, .95);
+upper_sorted = polyval(p_upper, x);
+[p_lower, stats] = quantreg(x, y, .05);
+lower_sorted = polyval(p_lower, x);
+if ~isempty(varargin)
+    upper_sorted(upper_sorted > 1) = 1;
+    lower_sorted(lower_sorted < 0) = 0;
+else
+    upper_sorted(upper_sorted > 2) = 2;
+    lower_sorted(lower_sorted < -2) = -2;    
 end
-scatter(meanAB(M_low), difff(M_low), 20, 'r');
-%text(meanAB,difff,num2str((B(~M))));
+[p_upper75, stats] = quantreg(x, y, .75);
+upper75_sorted = polyval(p_upper75, x);
+[p_lower25, stats] = quantreg(x, y, .25);
+lower25_sorted = polyval(p_lower25, x);
+
+% Determine outliers
+M = y_old >= upper_sorted | y_old <= lower_sorted;
+Idx = meanAB_sorted_idx(~M);
+
+% Plot data
+scatter(meanAB(Idx), difff(Idx), 20, 'k');
 hold on;
-X=[minD maxD];
-plot(X,ones(1,2)*meanp2D,'--k');
-text(maxD*.75,meanp2D+0.01,sprintf('mu+%0.2f*sd=%0.3f', f, meanp2D));
-hold on;
-plot(X,ones(1,2)*meanm2D,'--k');
-text(maxD*.75,meanm2D+0.01,sprintf('mu-%0.2f*sd=%0.3f', f, meanm2D));
-hold on;
-plot(X,ones(1,2)*meanDiff,'k');
-text(maxD*.75,meanDiff,sprintf('mu=%0.3f', meanDiff));
-Tmp = mcdregres(meanAB(:), difff(:), 'plots', 0);
-Est_param1 = [Tmp.slope Tmp.int];
-plot(X, polyval(Est_param1, X), '--b');
-text(maxD*.5,polyval(Est_param1, maxD*.5)+0.01, sprintf('y=%fx+%f', Est_param1(1), Est_param1(2)));
-% if ~isempty(C)
-%     scatter(meanAB(:), C(:), 20, 'g');
-%     Tmp = mcdregres(meanAB(:), C(:), 'plots', 0);
-%     Est_param2 = [Tmp.slope Tmp.int];
-%     plot(X, polyval(Est_param2, X), '--g');
-%     text(maxD*.5,polyval(Est_param2, maxD*.5)+0.01, sprintf('y=%fx+%f', Est_param2(1), Est_param2(2)));
-%     k = Est_param2(1)/Est_param1(1)
-%     d = Est_param2(2)-k*Est_param1(2)
-% end
-xlim(X);
-xlabel('Average volume in mm^3');
-ylabel('(Vol-Vol_{ref}) per average volume');
-legend('Vol_{ref}>=40mm^3','Vol_{ref}<40mm^3')
+Idx = meanAB_sorted_idx(M);
+scatter(meanAB(Idx), difff(Idx), 20, '+r');
+
+% Plot regression lines
+plot(meanAB_sorted, middle_sorted, 'b');
+plot(meanAB_sorted, upper_sorted, ':b');
+plot(meanAB_sorted, lower_sorted, ':b');
+plot(meanAB_sorted, upper75_sorted, '--b');
+plot(meanAB_sorted, lower25_sorted, '--b');
+
+xlim([min(meanAB) max(meanAB)]);
+xlabel('\bf Average volume in mm^3');
+if ~isempty(varargin)
+    ylim([-.05 1.2]);
+	ylabel('\bf Jaccard index');
+else
+	ylim([-2.1 2.1]);
+	ylabel('\bf (Vol-Vol_{ref}) per average volume');
+end
+h = findobj(gcf, 'type', 'line');
+legend([h(end) h(2) h(4)], 'Median','50% Range', '90% Range');

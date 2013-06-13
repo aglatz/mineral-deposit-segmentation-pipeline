@@ -1,4 +1,4 @@
-function [CC] = conncomp_list(L, L_iso, S_roi, S_weight, F)
+function [CC] = conncomp_list(L, L_iso, S_roi, S_weight, F, SM_hypo)
 % Calulates statistics of each connected component.
 % INPUTS: L - connected components as returned by conncomp_init()
 %         L_iso - Same as L but with isotropic voxels for
@@ -18,7 +18,8 @@ CC = struct( 'lab', -1, ...
              'ra', NaN, ...
              'ma', 0, ...
              'nsl', NaN, ...
-             'cont', NaN);
+             'cont', NaN, ...
+             'phypo', NaN);
 idx = 1;
 [Lab, Loc] = conncomp_mask(L, S_roi, 0.5, S_weight);
 N_lab = length(Lab);
@@ -33,7 +34,8 @@ for lab_idx = 1:N_lab
                          'ra', get_relativeanisotropy(SM_iso), ...
                          'ma', get_max_area(SM, F), ...
                          'nsl', get_nslices(SM), ...
-                         'cont', get_contrast(SM, S_weight))
+                         'cont', get_contrast(SM, S_weight), ...
+                         'phypo', get_phypo(SM, SM_hypo))
         if idx == 1
             CC = CC_tmp;
         else
@@ -44,9 +46,31 @@ for lab_idx = 1:N_lab
 end
 
 %-------------------------------------------------------------------------
+function [phypo] = get_phypo(SM, SM_hypo)
+SM_tmp = SM & SM_hypo;
+phypo = sum(SM_tmp(:))/sum(SM(:));
+
+%-------------------------------------------------------------------------
 function [cont] = get_contrast(SM, S)
-Q = quantile(double(S(SM)), [.05 .5 .95]);
-cont = (Q(1)-Q(3)) / Q(3);
+hu = 0;
+cont = [];
+for idx = 1:size(SM, 3)
+    S_tmp = S(:, :, idx);
+    SM_tmp = SM(:, :, idx);
+    if sum(SM_tmp(:)) > 0
+        hu = hu + 1;
+        Q = quantile(double(S_tmp(SM_tmp)), [.25 .5 .75]);
+        cont(hu) = (Q(3)-Q(1)) / Q(2);
+    end
+end
+if ~isempty(cont)
+    cont(cont == 0) = [];
+end
+if ~isempty(cont)
+    cont = median(cont);
+else
+    cont = NaN;
+end
 
 %-------------------------------------------------------------------------
 function [Nslices] = get_nslices(SM)

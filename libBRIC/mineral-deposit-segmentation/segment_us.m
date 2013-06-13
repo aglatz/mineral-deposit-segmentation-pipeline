@@ -266,6 +266,7 @@ RD_cutoff = u(find(Gn > (1-an), 1));
 if isempty(RD_cutoff)
     RD_cutoff = max(RD);
 end
+% RD_cutoff = delta;
 
 % Thresholding
 M = RD <= RD_cutoff;

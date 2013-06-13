@@ -175,8 +175,9 @@ for idx_j = 1:size(OverLoc, 1);
                     roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
 	S_out_hyper_all = interp_series([Subject '/' RoiName], S_out_hyper_all, ...
                     roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
-    [SM_oli] = morph_filter([Subject '/' T2swName], ...
-                        roi_nifti_sliceno(Roi, []), logical(S_out_all));
+	S_ntis_all = interp_series([Subject '/' RoiName], S_ntis_all, ...
+                    roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);                
+    [SM_oli] = morph_filter(logical(S_out_all), S_gre, S_roi, logical(S_ntis_all), logical(S_out_hypo_all));
     S_out_all(~SM_oli) = 0;
     S_out_hypo_all(~SM_oli) = 0;
     S_out_hyper_all(~SM_oli) = 0;
@@ -190,8 +191,8 @@ for idx_j = 1:size(OverLoc, 1);
     save_series_interp([Subject '/' RoiName], [Subject '/NonTis_mask'], ...
                         S_nontis_all, roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
     % Save norm tissue mask
-    save_series_interp([Subject '/' RoiName], [Subject '/NormTis_mask'], ...
-                        S_ntis_all, roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
+    save_series([Subject '/' RoiName], [Subject '/NormTis_mask'], ...
+                S_ntis_all, roi_nifti_sliceno(Roi, []));
     
 	% Validate
     if ~isempty(S_ref)
