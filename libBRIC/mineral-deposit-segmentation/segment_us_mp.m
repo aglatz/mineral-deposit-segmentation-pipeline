@@ -1,5 +1,5 @@
-function [RetAll, Subjects, Over] = segment_us_mp(SubjectFile, RoiLabelTable, N_cpus, ...
-                                                  varargin)
+function [RetAll, Subjects, Over] = segment_us_mp(SubjectFile, RoiLabelTable, ...
+                                                  N_cpus, varargin)
 % Function that calls pSegment.m (see its documentation for further info!).
 % This function can parallelize the segmentation across CPU cores using
 % pMatlab (see http://www.ll.mit.edu/mission/isr/pmatlab ) if N_cpus > 1.
@@ -13,6 +13,7 @@ function [RetAll, Subjects, Over] = segment_us_mp(SubjectFile, RoiLabelTable, N_
 %                         estimate the thresholds. All other ROI labels of
 %                         the same vector should be segmented with the same
 %                         threshold.
+%         N_cpus - Number of CPU cores used for data processing.
 % OPTIONAL INPUTS: InterpFactor - A factor controlling the (fft)
 %                                 interpolation. If =1 no
 %                                 interpolation is done, >.1 entails
@@ -22,8 +23,8 @@ function [RetAll, Subjects, Over] = segment_us_mp(SubjectFile, RoiLabelTable, N_
 %                               segmentation.
 %                  ThreshFactor - A vector with two elements, the slope and
 %                                 intercept, for changing the threshold.
-%
-%         N_cpus - Number of CPU cores used for data processing.
+%                  AdaptiveFlag - 'true' indicates that the adaptive
+%                                 thresholding method should be used.
 % RETURNS: RetAll - A cell variable that contains limited mask statistics
 %                   and validation results if a reference standard mask
 %                   was found for the corresponding subject. See
@@ -31,10 +32,11 @@ function [RetAll, Subjects, Over] = segment_us_mp(SubjectFile, RoiLabelTable, N_
 %                 See last two return values of segment_us().
 %          Subjects - Cell array containing subject paths.
 
-% Placeholder... will be filled in 'eval()' below.
+% Below are placeholders... will be filled in 'eval()' below.
 RetAll = [];
 Over = [];
 Subjects = {};
+FuncName = [];
 
 % Process optional args
 N_vain = length(varargin);
@@ -48,6 +50,10 @@ for idx_vain = 1:N_vain
                 ReportName = varargin{idx_vain+1};
             case {'ThreshFactor'}
                 ThreshFactor = varargin{idx_vain+1};
+            case {'AdaptiveFlag'}
+                AdaptiveFlag = varargin{idx_vain+1};
+            case {'FuncName'}
+                FuncName = varargin{idx_vain+1};
         end
     end
 end
@@ -62,5 +68,5 @@ if N_cpus > 1
     eval(pRUN(Cmd, N_cpus, {}));
     delete(InputFile);
 else
-    pSegment_us;
+	pSegment_us;
 end

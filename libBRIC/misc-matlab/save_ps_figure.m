@@ -6,18 +6,25 @@ function [] = save_ps_figure(basename, handle)
 % INPUTS: basename - filepath and basename of the postscript file
 %         handle - filehandle of figure
 %
-[path, name, ext] = fileparts(basename);
-if ~strcmp(ext, '.ps')
-	ext = '.ps';
-end
-basename = [path '/' name];
-if handle
-    %set(handle, 'PaperType', 'a4');
-    set(handle, 'PaperUnits', 'centimeters');
-    %set(handle, 'PaperPosition', [0.5 0.5 27 20]); % landscape
-    set(handle, 'PaperPosition', [0.5 0.5 20 27]); % portrait
-    print(handle, [basename ext], '-dpsc2', '-append', '-r300');
-	close(handle);
+if ~isempty(basename)
+    [path, name, ext] = fileparts(basename);
+    if ~strcmp(ext, '.ps')
+        ext = '.ps';
+    end
+    basename = [path '/' name];
+    if ~isempty(handle)
+        %set(handle, 'PaperType', 'a4');
+        set(handle, 'PaperUnits', 'centimeters');
+        %set(handle, 'PaperPosition', [0.5 0.5 27 20]); % landscape
+        set(handle, 'PaperPosition', [0.5 0.5 20 27]); % portrait
+        print(handle, [basename ext], '-dpsc2', '-append', '-r300');
+        close(handle);
+    else
+        delete([basename ext]);
+    end
 else
-    delete([basename ext]);
+    if ~isempty(handle)
+        pause(0.5);
+        close(handle);
+    end
 end

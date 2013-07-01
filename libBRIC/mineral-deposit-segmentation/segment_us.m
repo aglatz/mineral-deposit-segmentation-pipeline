@@ -1,5 +1,5 @@
 function [Ret] = segment_us(S_gre, S_t1w, S_voi, S_ref, Lab, ...
-                            I_ntis_means_est, I_gre_thr, varargin)
+                            I_ntis_means_est, I_gre_thr, adaptive_flag, varargin)
 % Unsupervised segmentation of hypointense outlier signal intensities on GRE,
 % which are likely iron deposits or calcifications. Requires GRE and T1-weighted
 % volumes as input. T1-weighted volumes are used to separate hypointensities
@@ -26,6 +26,8 @@ function [Ret] = segment_us(S_gre, S_t1w, S_voi, S_ref, Lab, ...
 %                            appearing tissue of all regions.
 %         I_gre_thr - If not empty it is used for the segmentation and
 %                     circumvents the calculation of the adaptive threshold
+%         adaptive_flag - 'true' indicates that the adaptive outlier
+%                         detection method should be used
 % OPTIONAL INPUTS: Out_name - File name of the ps file where the plots
 %                             summary the performance statistics are saved.
 % RETURN STRUCTURE ELEMENTS:
@@ -116,7 +118,7 @@ for idx_lab = 1:N_lab
     
     % Get normal tissue, candidate outliers and thresholds
     [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, Ret.I_ntis_means(idx_lab, :), C_ntis] = ...
-        get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi);
+        get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi, adaptive_flag);
     Ret.S_nontis = Ret.S_nontis + cast(SM_oli, class(Ret.S_nontis)) .* Lab(idx_lab);
     Ret.S_ntis = Ret.S_ntis + cast(SM_ntis, class(Ret.S_ntis)) .* Lab(idx_lab);
     
@@ -124,7 +126,6 @@ for idx_lab = 1:N_lab
     if isempty(I_gre_thr)
         % Derive threshold from first ROI
         if Lab(idx_lab) == Lab(1)
-            % Derive Threshold from GP
             [SM_oli_filt, Ret.I_gre_thr, SM_oli_filt_t1whypo, SM_oli_filt_t1whyper] = ...
                 thresh_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_t1w_max, [], P_thr, 1);
         else
@@ -241,32 +242,35 @@ SM_oli_t1whyper(SM_oli) = Mat(:, 2) >= I_t1w_max;
 
 %% Split normal and outlier intensities
 function [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, I_ntis_mean, C_ntis] = ...
-    get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi)
+    get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi, adaptive_flag)
 
 Mat = [S_gre(SM_antis) S_t1w(SM_antis)];
 
 % Mean and covariance of approx. normal distr. tissue
 [~, I_ntis_mean, I_ntis_sd, ~, ~, C_ntis] = pcomp_find(Mat);
 
-% Find outliers according to Filzmoser, Reimann, Garrett (2003).
 RD = mahalanobis(Mat, I_ntis_mean, 'cov', C_ntis);
-[Gn, u] = ecdf(RD);
-G = chi2cdf(u, size(Mat, 2));
 delta = chi2inv(0.975, size(Mat, 2)); % Only simulation values for 97.5%
-dG = G - Gn;
-pn = max(dG(u >= delta & dG >= 0));
-an = 0;
-if ~isempty(pn)
-    pcrit = (0.24 - 0.003 * size(Mat, 2))/sqrt(size(Mat, 1));
-    if pn > pcrit
-        an = pn;
-    end    
+if adaptive_flag
+    % Find outliers according to Filzmoser, Reimann, Garrett (2003).
+    [Gn, u] = ecdf(RD);
+    G = chi2cdf(u, size(Mat, 2));
+    dG = G - Gn;
+    pn = max(dG(u >= delta & dG >= 0));
+    an = 0;
+    if ~isempty(pn)
+        pcrit = (0.24 - 0.003 * size(Mat, 2))/sqrt(size(Mat, 1));
+        if pn > pcrit
+            an = pn;
+        end    
+    end
+    RD_cutoff = u(find(Gn > (1-an), 1));
+    if isempty(RD_cutoff)
+        RD_cutoff = max(RD);
+    end
+else
+    RD_cutoff = delta;
 end
-RD_cutoff = u(find(Gn > (1-an), 1));
-if isempty(RD_cutoff)
-    RD_cutoff = max(RD);
-end
-% RD_cutoff = delta;
 
 % Thresholding
 M = RD <= RD_cutoff;
@@ -280,8 +284,10 @@ ellipsplot_mod(I_ntis_mean, C_ntis, Mat, 'b', delta);
 ellipsplot_mod(I_ntis_mean, C_ntis, Mat, 'r', RD_cutoff);
 pcomp_plot(I_ntis_mean, I_ntis_sd, 'b');
 
-% Calculate exact thresholds
+% Calculate GRE threshold with refined RD
 I_gre_min = -sqrt(C_ntis(1,1)*RD_cutoff)+I_ntis_mean(1);
-I_t1w_min = -sqrt(C_ntis(2,2)*RD_cutoff)+I_ntis_mean(2);
-I_t1w_max = +sqrt(C_ntis(2,2)*RD_cutoff)+I_ntis_mean(2);
+
+% Calculate T1W threshold with chi2(2;0.975) value since it's more conservative
+I_t1w_min = -sqrt(C_ntis(2,2)*delta)+I_ntis_mean(2);
+I_t1w_max = +sqrt(C_ntis(2,2)*delta)+I_ntis_mean(2);
 
