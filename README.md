@@ -22,11 +22,11 @@ Steps for running the script:
 - git clone git@github.com:aglatz/mineral-deposit-segmentation-pipeline.git
 - cd libBRIC/mineral-deposit-segmentation/
 - run the following matlab commands:
--- addpath('../misc-matlab/'); % include local library
--- addpath('NIFTI/'); % include NIFTI toolbox functions
--- addpath('LIBRA/'); % include LIBRA toolbox functions
--- RoiLabelTable={1,2,3,4,5,6,7,8,9,10}; % define ROI labes of interest
--- [Ret] = segment_us_single('lesionphantom', RoiLabelTable, 'class', 1, [1 0], true); % Run segmentation on the lesion phantom volumes
+* addpath('../misc-matlab/'); % include local library
+* addpath('NIFTI/'); % include NIFTI toolbox functions
+* addpath('LIBRA/'); % include LIBRA toolbox functions
+* RoiLabelTable={1,2,3,4,5,6,7,8,9,10}; % define ROI labes of interest
+* [Ret] = segment_us_single('lesionphantom', RoiLabelTable, 'class', 1, [1 0], true); % Run segmentation on the lesion phantom volumes
 - cd lesionphantom
 - fslview -m single GRE_restore.nii.gz T1W_restore.nii.gz NonTis_mask.nii.gz NormTis_mask.nii.gz T2swHypo_mask.nii.gz # to view the masks
 - ../../misc-scripts/ps2pdfAll.sh # converts the *.ps files into *.pdf files
