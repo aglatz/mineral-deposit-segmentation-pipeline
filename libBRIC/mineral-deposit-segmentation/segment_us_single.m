@@ -1,6 +1,6 @@
-function [Ret] = segment_us_single(Subject, RoiLabelTable, ReportName, ...
-                                   InterpFactor, ThreshFactor, ...
-                                   AdaptiveFlag, varargin)
+function [Ret, CC] = segment_us_single(Subject, RoiLabelTable, ReportName, ...
+                                       InterpFactor, ThreshFactor, ...
+                                       AdaptiveFlag, varargin)
 % This function expects three files in each subject directory:
 % - RO_mask: the masks with the regions of interests
 % - GRE_brain_restore: the GRE volume which was brain extracted
@@ -67,10 +67,10 @@ Roi = roi_init(S_roi);
 S_roi = load_series_interp(RoiFile, roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
 
 % Pool signal intensities from corresponding left and right hemisphere structures
-S_roi(S_roi == 50) = 11;
-S_roi(S_roi == 51) = 12;
-S_roi(S_roi == 52) = 13;
-S_roi(S_roi == 55) = 14;
+% S_roi(S_roi == 50) = 11;
+% S_roi(S_roi == 51) = 12;
+% S_roi(S_roi == 52) = 13;
+% S_roi(S_roi == 55) = 14;
 
 % Read Reference
 try
@@ -157,8 +157,12 @@ S_out_hypo_all = interp_series([Subject '/' RoiName], S_out_hypo_all, ...
 S_out_hyper_all = interp_series([Subject '/' RoiName], S_out_hyper_all, ...
                 roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
 S_ntis_all = interp_series([Subject '/' RoiName], S_ntis_all, ...
-                roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);                
-[SM_oli] = morph_filter(logical(S_out_all), S_gre, S_roi, logical(S_ntis_all), logical(S_out_hypo_all));
+                roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
+            
+% Morphological filtering
+NII = load_series([Subject '/' RoiName], 0);
+F = NII.hdr.dime.pixdim(2:4);
+[SM_oli, CC] = morph_filter(logical(S_out_all), S_gre, S_roi, logical(S_ntis_all), logical(S_out_hypo_all), F);
 S_out_all(~SM_oli) = 0;
 S_out_hypo_all(~SM_oli) = 0;
 S_out_hyper_all(~SM_oli) = 0;
@@ -180,8 +184,6 @@ if SaveMaskFlag
 end
 
 % Validate
-NII = load_series([Subject '/' RoiName], 0);
-F = NII.hdr.dime.pixdim(2:4);
 if ~isempty(S_ref)
     Ret = validate_raw(S_out_all, S_ref, [], F);
 else
