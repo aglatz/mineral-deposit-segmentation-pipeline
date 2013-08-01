@@ -22,7 +22,11 @@ else
     do_gzip = true;
     name_ext = [basename '.nii'];    
 end
-save_untouch_nii(NII, name_ext);
+if ~isfield(NII,'untouch') || NII.untouch == 0
+	save_nii(NII, name_ext);
+else
+    save_untouch_nii(NII, name_ext);
+end
 
 try
     if do_gzip
