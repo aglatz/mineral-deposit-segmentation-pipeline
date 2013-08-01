@@ -1,6 +1,6 @@
 function [Ret, CC] = segment_us_single(Subject, RoiLabelTable, ReportName, ...
                                        InterpFactor, ThreshFactor, ...
-                                       AdaptiveFlag, varargin)
+                                       AdaptiveFlag, IntvarP, varargin)
 % This function expects three files in each subject directory:
 % - RO_mask: the masks with the regions of interests
 % - GRE_brain_restore: the GRE volume which was brain extracted
@@ -32,6 +32,8 @@ function [Ret, CC] = segment_us_single(Subject, RoiLabelTable, ReportName, ...
 %                        segment_us())
 %         AdaptiveFlag - If set to 'true' the T2*w is refined with
 %                        an adaptive method
+%         IntvarP - Cumulative probability that defines the threshold of
+%                   the T2*w intensity variability filter
 % OPTIONAL INPUTS: SaveMaskFlag - Controls the saving of the generated
 %                                 masks. Default is 'true'.
 % OUTPUT: The structure from validate_raw() plus additional element
@@ -50,7 +52,7 @@ for idx_vain = 1:N_vain
         end
     end
 end
-
+% Subject = '/home/aglatz/tmp/mineral/1/13522';
 % Delete previous version of report file
 if ~isempty(ReportName)
     ReportFile = [Subject '/' ReportName];
@@ -162,7 +164,9 @@ S_ntis_all = interp_series([Subject '/' RoiName], S_ntis_all, ...
 % Morphological filtering
 NII = load_series([Subject '/' RoiName], 0);
 F = NII.hdr.dime.pixdim(2:4);
-[SM_oli, CC] = morph_filter(logical(S_out_all), S_gre, S_roi, logical(S_ntis_all), logical(S_out_hypo_all), F);
+[SM_oli, CC, IntVar] = intvar_filter(logical(S_out_all), S_gre, S_roi, ...
+                                    logical(S_ntis_all), logical(S_out_hypo_all), ...
+                                    F, IntvarP);
 S_out_all(~SM_oli) = 0;
 S_out_hypo_all(~SM_oli) = 0;
 S_out_hyper_all(~SM_oli) = 0;
@@ -190,4 +194,16 @@ else
     % Fake validation just to get the volume
     Ret = validate_raw(S_out_all, S_out_all, [], F);
 end
-Ret.I_gre_thr = I_gre_thr; % Also add T2*w threshold
+
+% Add Input parameters to output
+Ret.Input.Subject = Subject;
+Ret.Input.RoiLabelTable = RoiLabelTable;
+Ret.Input.ReportName = ReportName;
+Ret.Input.InterpFactor = InterpFactor;
+Ret.Input.ThreshFactor = ThreshFactor;
+Ret.Input.AdaptiveFlag = AdaptiveFlag;
+Ret.Input.IntvarP = IntvarP;
+
+% Add intermediate results to output
+Ret.I_gre_thr = I_gre_thr;
+Ret.IntVar = {IntVar};

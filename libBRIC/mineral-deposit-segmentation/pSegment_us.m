@@ -34,6 +34,9 @@ end
 if exist('AdaptiveFlag', 'var') <= 0 || isempty(AdaptiveFlag)
     AdaptiveFlag = true;
 end
+if exist('IntvarP', 'var') <= 0 || isempty(IntvarP)
+    IntvarP = 0.5;
+end
 if exist('FuncName', 'var') <= 0 || isempty(FuncName)
     FuncName = 'segment_us_single';
 end
@@ -62,7 +65,7 @@ for idx_j = 1:size(OverLoc, 1);
     
 	fh = str2func(FuncName);
 	Ret = fh(Subject, RoiLabelTable, ReportName, InterpFactor, ...
-             ThreshFactor, AdaptiveFlag);
+             ThreshFactor, AdaptiveFlag, IntvarP);
 	save([Subject '/Ret.mat'], 'Ret');
 end
 

@@ -6,8 +6,8 @@
 close all; clear all
 
 SubjectFile = 'subjects_98';
-Pfx = 'cvfix_010713';
-AdaptiveFlag = false;
+Pfx = 'ad_100713';
+AdaptiveFlag = true;
 RoiLabelTable = {[13, 11, 12, 14]};
 N_cpus = 6;
 
@@ -17,7 +17,7 @@ Ret = segment_us_mp([SubjectFile '.xls'], ...
                     'FuncName', 'segment_us_refine', ...
                     'AdaptiveFlag', AdaptiveFlag);
 save([SubjectFile '_' Pfx '.mat']);
-% load([SubjectFile '_' Pfx '.mat']);
+load([SubjectFile '_' Pfx '.mat']);
 
 % CV
 [~, ~, raw] = xlsread([SubjectFile '.xls']);

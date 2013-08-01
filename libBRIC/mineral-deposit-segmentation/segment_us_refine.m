@@ -1,5 +1,6 @@
 function [Ret] = segment_us_refine(Subject, RoiLabelTable, ReportName, ...
-                                   InterpFactor, ThreshFactor, AdaptiveFlag)
+                                   InterpFactor, ThreshFactor, AdaptiveFlag, ...
+                                   IntvarP)
 % Function that finds the optimal 'ThreshFactor' (see segment_us())
 % by adjusting the factor to maximise the Jaccard index between
 % generated and reference mask.
@@ -18,24 +19,24 @@ if Ret.Vol_ref > 0
     options = optimset('fminsearch');
     options = optimset(options, 'Display', 'iter');
     xopt = fminsearch(@(x) optifun(x, Subject, RoiLabelTable, ...
-                      InterpFactor, AdaptiveFlag), x0, options);
+                      InterpFactor, AdaptiveFlag, IntvarP), x0, options);
                          
     % Get masks for best version
     Ret = segment_us_single(Subject, RoiLabelTable, ReportName, ...
-                            InterpFactor, [xopt 0], AdaptiveFlag);
+                            InterpFactor, [xopt 0], AdaptiveFlag, IntvarP);
     Ret.alpha_opt = xopt;
 else
 	% Get masks for best version
     Ret = segment_us_single(Subject, RoiLabelTable, ReportName, ...
-                            InterpFactor, ThreshFactor, AdaptiveFlag);
+                            InterpFactor, ThreshFactor, AdaptiveFlag, IntvarP);
     Ret.alpha_opt = NaN;
 end
 
 
 %--------------------------------------------------------------------------
-function [F] = optifun(x, Subject, RoiLabelTable, InterpFactor, AdaptiveFlag)
+function [F] = optifun(x, Subject, RoiLabelTable, InterpFactor, AdaptiveFlag, IntvarP)
 Ret = segment_us_single(Subject, RoiLabelTable, [], ...
-                        InterpFactor, [x 0], AdaptiveFlag, ...
+                        InterpFactor, [x 0], AdaptiveFlag, IntvarP, ...
                         'SaveMaskFlag', false);
 F = 1 - Ret.Jaccard;
 

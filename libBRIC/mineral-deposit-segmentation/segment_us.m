@@ -117,7 +117,7 @@ for idx_lab = 1:N_lab
     end
     
     % Get normal tissue, candidate outliers and thresholds
-    [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, Ret.I_ntis_means(idx_lab, :), C_ntis] = ...
+    [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, Ret.I_ntis_means(idx_lab, :), C_ntis, RDs] = ...
         get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi, adaptive_flag);
     Ret.S_nontis = Ret.S_nontis + cast(SM_oli, class(Ret.S_nontis)) .* Lab(idx_lab);
     Ret.S_ntis = Ret.S_ntis + cast(SM_ntis, class(Ret.S_ntis)) .* Lab(idx_lab);
@@ -137,22 +137,25 @@ for idx_lab = 1:N_lab
                 thresh_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_t1w_max, I_gre_thr, [], 0);
     end
     
-    % Plot missclassification error
     subplot(2, 1, 1);
-    scatter(S_gre(SM_oli_filt), S_t1w(SM_oli_filt), 10, Col(2, :));
-    scatter(S_gre(SM_ref & SM_oli_filt), S_t1w(SM_ref & SM_oli_filt), 10, Col(3, :));
-	scatter(S_gre(SM_ref & ~SM_oli_filt), S_t1w(SM_ref & ~SM_oli_filt), 10, Col(4, :));
+	% Plot missclassification error
+    scatter(S_gre(SM_oli_filt), S_t1w(SM_oli_filt), 10, Col(2, :), 'x');
+    %scatter(S_gre(SM_ref & SM_oli_filt), S_t1w(SM_ref & SM_oli_filt), 10, Col(3, :), 'x');
+	%scatter(S_gre(SM_ref & ~SM_oli_filt), S_t1w(SM_ref & ~SM_oli_filt), 10, Col(4, :), 'x');
     xlabel('\bf T2*W in arb. units');
     ylabel('\bf T1W in arb. units');
-    I_tmp = quantile(S_gre(SM_oli_filt), .5);
-    h(1) = line_with_label(I_tmp, 'thr=', 'g', max(S_t1w(SM_voi)), [], 1, 'v');
-    I_tmp = quantile(S_gre(SM_ref), .5);
-    h(2) = line_with_label(I_tmp, 'thr=', '--b', max(S_t1w(SM_voi)), [], 1, 'v');
-    legend(h, {'Estimated median', 'Reference median'}, 'Location', 'best');
+    % Show thresholds
+    ellipsplot_mod(Ret.I_ntis_means(idx_lab, :), C_ntis, [], 'b', RDs(1));
+    ellipsplot_mod(Ret.I_ntis_means(idx_lab, :), C_ntis, [], 'g', RDs(2));
+%     if isempty(S_ref)
+%         legend('Normal-appearing tissue intensities', ...
+%                'Hypointense outlier intensities', 'Critical robust distance', ...
+%                'Refined critical robust distance', 'Location', 'best');
+%     end
 
     % Plot mahalanobis against chi2
     subplot(2, 1, 2);
-    plot_mahalanobis(S_gre, S_t1w, SM_ntis, SM_oli_filt, SM_ref, Ret.I_ntis_means(idx_lab, :), C_ntis);
+    plot_mahalanobis(S_gre, S_t1w, SM_voi, Ret.I_ntis_means(idx_lab, :), C_ntis, RDs);
 
     % Save result
     Ret.S_out = Ret.S_out + cast(SM_oli_filt, class(Ret.S_out)) .* Lab(idx_lab);
@@ -165,45 +168,34 @@ end
 
 
 %% Plot mahalanobis distance against sqrt of chi2 distribution
-function [MD_oli_min, MD_ntis_oli, MD_min_ref] = ...
-    plot_mahalanobis(S_gre, S_t1w, SM_ntis, SM_oli, SM_ref, I_ntis_mean, C_ntis)
+function plot_mahalanobis(S_gre, S_t1w, SM_voi, I_ntis_mean, C_ntis, RDs)
 
 % QQ plot
-SM_ntis_oli_ref = SM_ntis | SM_oli | SM_ref;
-Mat = [S_gre(SM_ntis_oli_ref) S_t1w(SM_ntis_oli_ref)];
-MD_ntis_oli_ref = sqrt(mahalanobis(Mat, I_ntis_mean, 'cov', C_ntis));
-[y, x] = chiqqplot_mod(MD_ntis_oli_ref, 2, 'MCDCOV');
+Mat = [S_gre(SM_voi) S_t1w(SM_voi)];
+MD_ntis_oli_ref = (mahalanobis(Mat, I_ntis_mean, 'cov', C_ntis));
+% [y, x] = chiqqplot_mod(MD_ntis_oli_ref, 2, 'MCDCOV');
+N_samp = length(MD_ntis_oli_ref);
+if N_samp < 1000
+    N_samp = 1000;
+end
+h = qqplot((chi2rnd(2, N_samp, 1)), MD_ntis_oli_ref);
+x = get(h(1), 'XData');
+y = get(h(1), 'YData');
+set(h(1), 'LineStyle', '-');
+set(h(1), 'Marker', 'none');
+xlabel('\bf Quantiles of the \chi^2 distribution (df=2)');
+ylabel('\bf Robust distances');
 hold on;
 
-% Plot chosen threshold
-Leg = {};
-idx = 1;
-MD_oli_min = min(MD_ntis_oli_ref(SM_oli(SM_ntis_oli_ref)));
-if ~isempty(MD_oli_min)
-    idx_y = find(y == MD_oli_min, 1);
-    h(1) = scatter(x(idx_y), MD_oli_min, 'g', 'filled');
-    Leg{idx} = 'Estimated';
-    idx = idx+1;
-end
-% Plot reference threshold
-if ~isempty(SM_ref)
-    MD_min_ref = min(MD_ntis_oli_ref(SM_ref(SM_ntis_oli_ref)));
-    if ~isempty(MD_min_ref)
-        idx_y = find(y == MD_min_ref, 1);
-        h(2) = scatter(x(idx_y), MD_min_ref, 'b', 'filled');
-        Leg{idx} = 'Reference';
-        % idx = idx+1;
-    end
-else
-    MD_min_ref = [];
-end
-if false && ~isempty(Leg)
-	legend(h, Leg, 'Location', 'best');
-end
+% Display fixed threshold
+diff = (get(h(1), 'YData') - (RDs(1))).^2;
+y_idx = find(min(diff) == diff, 1);
+scatter(x(y_idx), y(y_idx), 'b', 'filled');
 
-% Plot adjusted outlyingness
-SM_ntis_oli = SM_ntis | SM_oli;
-MD_ntis_oli = MD_ntis_oli_ref(SM_ntis_oli(SM_ntis_oli_ref));
+% Display refined threshold
+diff = (y - (RDs(2))).^2;
+y_idx = find(min(diff) == diff, 1);
+scatter(x(y_idx), y(y_idx), 'g', 'filled');
 
 
 %% Morphological filtering to remove outliers from segmentation, imaging and vessels 
@@ -241,13 +233,13 @@ SM_oli_t1whyper(SM_oli) = Mat(:, 2) >= I_t1w_max;
 
 
 %% Split normal and outlier intensities
-function [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, I_ntis_mean, C_ntis] = ...
+function [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, I_ntis_mean, C_ntis, RDs] = ...
     get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi, adaptive_flag)
 
 Mat = [S_gre(SM_antis) S_t1w(SM_antis)];
 
 % Mean and covariance of approx. normal distr. tissue
-[~, I_ntis_mean, I_ntis_sd, ~, ~, C_ntis] = pcomp_find(Mat);
+[~, I_ntis_mean, ~, ~, ~, C_ntis] = pcomp_find(Mat);
 
 RD = mahalanobis(Mat, I_ntis_mean, 'cov', C_ntis);
 delta = chi2inv(0.975, size(Mat, 2)); % Only simulation values for 97.5%
@@ -271,6 +263,7 @@ if adaptive_flag
 else
     RD_cutoff = delta;
 end
+RDs = [delta RD_cutoff];
 
 % Thresholding
 M = RD <= RD_cutoff;
@@ -279,15 +272,10 @@ SM_ntis(SM_voi) = M;
 SM_oli = SM_voi;
 SM_oli(SM_voi) = ~M;
 
-% Show thresholds
-ellipsplot_mod(I_ntis_mean, C_ntis, Mat, 'b', delta);
-ellipsplot_mod(I_ntis_mean, C_ntis, Mat, 'r', RD_cutoff);
-pcomp_plot(I_ntis_mean, I_ntis_sd, 'b');
-
 % Calculate GRE threshold with refined RD
 I_gre_min = -sqrt(C_ntis(1,1)*RD_cutoff)+I_ntis_mean(1);
 
-% Calculate T1W threshold with chi2(2;0.975) value since it's more conservative
-I_t1w_min = -sqrt(C_ntis(2,2)*delta)+I_ntis_mean(2);
-I_t1w_max = +sqrt(C_ntis(2,2)*delta)+I_ntis_mean(2);
+% Calculate T1W threshold with refined RD
+I_t1w_min = -sqrt(C_ntis(2,2)*RD_cutoff)+I_ntis_mean(2);
+I_t1w_max = +sqrt(C_ntis(2,2)*RD_cutoff)+I_ntis_mean(2);
 

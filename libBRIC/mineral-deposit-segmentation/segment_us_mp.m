@@ -25,6 +25,8 @@ function [RetAll, Subjects, Over] = segment_us_mp(SubjectFile, RoiLabelTable, ..
 %                                 intercept, for changing the threshold.
 %                  AdaptiveFlag - 'true' indicates that the adaptive
 %                                 thresholding method should be used.
+%                  IntvarP - Cummulative probability value that defines the
+%                            T2*w intensity variability threshold
 % RETURNS: RetAll - A cell variable that contains limited mask statistics
 %                   and validation results if a reference standard mask
 %                   was found for the corresponding subject. See
@@ -52,6 +54,8 @@ for idx_vain = 1:N_vain
                 ThreshFactor = varargin{idx_vain+1};
             case {'AdaptiveFlag'}
                 AdaptiveFlag = varargin{idx_vain+1};
+            case {'IntvarP'}
+                IntvarP = varargin{idx_vain+1};
             case {'FuncName'}
                 FuncName = varargin{idx_vain+1};
         end
