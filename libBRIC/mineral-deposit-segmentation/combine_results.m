@@ -1,12 +1,19 @@
 close all; clear all; clc
 
 Name = 'subjects_98';
+Pfx = 'ad_100713_lnorm0.6';
+N_cpus = 6;
+AdaptiveFlag = true;
 RoiLabelTable = {[13 11 12 14]};
-[Ret, Subjects, Over] = segment_us_mp([Name '.xls'], ...
-                                RoiLabelTable, 6, 'ThreshFactor', [1 0]);
-save([Name '_ad25_4fsize.mat']);
+% [Ret, Subjects, Over] = segment_us_mp([Name '.xls'], ...
+%                                       RoiLabelTable, N_cpus, ...
+%                                       'ThreshFactor', [1 0], ...
+%                                       'AdaptiveFlag', AdaptiveFlag, ...
+%                                       'SaveMaskFlag', true, ...
+%                                       'IntvarP', 0.4);
+% save([Name '_' Pfx '.mat']);
 
-[J, D, V, V_ref, Subjects, FPC, FPV, FPSubjects] = load_matdata([Name '_ad25_4fsize.mat']);
+[J, D, V, V_ref, Subjects, FPC, FPV, FPSubjects, Sens, Spec, Conf] = load_matdata([Name '_' Pfx '.mat'], 0);
 
 % AB = reshape([out.P], 2, 10);
 % fprintf('-- alpha --');
@@ -31,6 +38,12 @@ FPC
 fprintf('-- FP volume --');
 quantile(FPV, Q)
 % bootci(10000, {@median, V(M_vol & ~M_vol_ref)}, 'alpha', 0.05, 'type', 'bca')
+fprintf('-- Sens/Spec --');
+[Sens Spec]
+fprintf('-- Confusion --');
+Conf
+% fprintf('-- Param --');
+% quantile(P, Q)
 
 save_xls('FP', FPSubjects);
 
