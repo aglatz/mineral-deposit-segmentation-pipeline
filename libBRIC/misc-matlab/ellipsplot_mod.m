@@ -28,7 +28,7 @@ function [x_min, y_min, y_max] = ellipsplot_mod(center,covar,data, col, chi_val)
 
 % set(gcf,'Name', '97.5% Tolerance ellipse', 'NumberTitle', 'off');
 % n=length(dist);
-if size(data,2)~=2
+if false %size(data,2)~=2
      disp('The tolerance ellipse is only drawn for two-dimensional data sets')
 else
 %     if nargin==4

@@ -6,19 +6,20 @@
 
 close all; clear all;
 
-Subject = '/home/aglatz/tmp/mineral-deposit-segmentation-pipeline/libBRIC/qMRI/test/21297/GRE_2.4mm_12.5kHz';
+Subject = '/home/aglatz/tmp/mineral-deposit-segmentation-pipeline/libBRIC/qMRI/test/21297/T1W';
+% Subject = '/home/aglatz/tmp/mineral-deposit-segmentation-pipeline/libBRIC/qMRI/test/21293/R2s/52716';
 
 % S_t1w = load_series([Subject '/T1W_brain_restore_orig'], []);
 % S_gre = load_series([Subject '/GRE_brain_restore_orig'], []);
 % 
 % save_series([Subject '/T1W_brain_restore_orig'], [Subject '/T1W_brain_restore'], S_t1w, []);
 % save_series([Subject '/GRE_brain_restore_orig'], [Subject '/GRE_brain_restore'], S_gre, []);
-% 
+
 
 RoiLabelTable = {1, 2, 4, 8, 16, 32, 64};
 % % RoiLabelTable = {1, 2, 3, 4, 5, 6, 7};
 % segment_us_single(Subject, RoiLabelTable, 'class', 1, [1 0], true);
-% 
+
 % S_roi = load_series([Subject '/RO_mask'], []);
 % S_norm = load_series([Subject '/NormTis_mask'], []);
 % 
@@ -30,10 +31,11 @@ RoiLabelTable = {1, 2, 4, 8, 16, 32, 64};
 %     SM_norm = S_norm == Lab(idx_lab);
 %     S_t1w_new(SM_roi) = randsample(S_t1w(SM_norm), N_roi, true);
 % end
-% 
+
+% S_t1w_new = 400 + 50*randn(size(S_t1w));
 % save_series([Subject '/T1W_brain_restore_orig'], [Subject '/T1W_brain_restore'], S_t1w_new, []);
 
-[~, CC] = segment_us_single(Subject, RoiLabelTable, 'class', 1, [1 0], true);
+[~, CC] = segment_us_single(Subject, RoiLabelTable, 'class', 1, [1 0], true, 0.3);
 
 S_roi = load_series([Subject '/RO_mask.nii.gz'], []);
 SM_hypo = logical(load_series([Subject '/T2swHypo_mask.nii.gz'], []));
