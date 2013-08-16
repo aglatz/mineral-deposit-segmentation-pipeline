@@ -6,8 +6,8 @@
 close all; clear all
 
 SubjectFile = 'subjects_98';
-Pfx = 'ad_t1w0.975';
-AdaptiveFlag = true;
+Pfx = 'fi_t1w0.975';
+AdaptiveFlag = false;
 RoiLabelTable = {[13, 11, 12, 14]};
 N_cpus = 6;
 
@@ -41,15 +41,20 @@ for idx_rep = 1:N_rep
                                               'IntvarP', IntvarP(idx_intvarp));
             MatName = [DirName '/hu_' num2str(IntvarP(idx_intvarp)) '_' Pfx '.mat'];
             save(MatName, 'Ret', 'Subjects');
-            [J, ~, ~, V_ref] = load_matdata(MatName);
+            [J, ~, ~, V_ref] = load_matdata(MatName, 0);
             out(idx_testset).J{idx_intvarp} = J;
             out(idx_testset).V_ref{idx_intvarp} = V_ref;
-            M = V_ref > 0;
-            J_mean(idx_intvarp) = median(J(M));
+            J_mean(idx_intvarp) = quantile(J, .5);
         end
         
         % Select best
-        out(idx_testset).IntvarPOpt = IntvarP(find(J_mean == max(J_mean), 1));
+        idx = find(J_mean == max(J_mean));
+        [idx, len] = find_largemax(idx, '');
+        if mod(len, 2) == 0 % see example of find_largemax() for behaviour
+                            % when the number of indices is even
+            idx = [idx-1, idx];
+        end
+        out(idx_testset).IntvarPOpt = mean(IntvarP(idx));
         
         % Test
         idx_test = cvp.test(idx_testset);
@@ -63,6 +68,7 @@ for idx_rep = 1:N_rep
                                       'ThreshFactor', [1 0], ...
                                       'ReportName', 'class', ...
                                       'AdaptiveFlag', AdaptiveFlag, ...
+                                      'SaveMaskFlag', true, ...
                                       'IntvarP', out(idx_testset).IntvarPOpt);
     end
 end

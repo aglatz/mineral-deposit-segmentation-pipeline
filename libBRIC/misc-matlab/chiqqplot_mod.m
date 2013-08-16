@@ -37,15 +37,14 @@ se=sqrt(se);
 y=sort(y);
 plot(x, x, 'k');
 hold on;
-plot(x, x - 1.95*se, '--k');
-plot(x, x + 1.95*se, '--k');
-plot(x, y, 'r');
+plot(x, x - 1.95*se, '--k', x, x + 1.95*se, '--k');
+plot(x, y, 'm');
 xlabel('\bf Square root of the quantiles of the chi-squared distribution');
 % if strcmp(class,'MCDCOV')
-%     ylabel('Robust distance');
+	ylabel('\bf Square root of the robust distances');
 % elseif strcmp(class,'COV')
-    ylabel('\bf Mahalanobis distance');
+%    ylabel('\bf Mahalanobis distance');
 % else
 %     ylabel('Distance');
 % end
-title(class);
+% title(class);
