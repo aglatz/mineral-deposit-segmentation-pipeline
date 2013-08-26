@@ -88,7 +88,8 @@ for idx_lab = 1:N_lab
 
     % Plot all tissue intensities
     subplot(2, 1, 1);
-    scatter(S_gre(SM_voi), S_t1w(SM_voi), 10, Col(1, :));
+    psize = 20;
+    scatter(S_gre(SM_voi), S_t1w(SM_voi), psize, Col(1, :));
     hold on;
     
 	% Get approximately normally distributed intensities
@@ -113,7 +114,7 @@ for idx_lab = 1:N_lab
 %         text(round(max(X)), round(max(Y)), sprintf('y = %0.2f x  + %0.2f', P(1), P(2)));
         
         % Selected cluster
-        scatter(S_gre(SM_antis), S_t1w(SM_antis), 10, 'c');
+        scatter(S_gre(SM_antis), S_t1w(SM_antis), psize, 'c');
     end
     
     % Get normal tissue, candidate outliers and thresholds
@@ -139,9 +140,9 @@ for idx_lab = 1:N_lab
     
     subplot(2, 1, 1);
 	% Plot missclassification error
-    scatter(S_gre(SM_oli_filt), S_t1w(SM_oli_filt), 10, Col(2, :), 'x');
-    %scatter(S_gre(SM_ref & SM_oli_filt), S_t1w(SM_ref & SM_oli_filt), 10, Col(3, :), 'x');
-	%scatter(S_gre(SM_ref & ~SM_oli_filt), S_t1w(SM_ref & ~SM_oli_filt), 10, Col(4, :), 'x');
+    scatter(S_gre(SM_oli_filt), S_t1w(SM_oli_filt), psize, Col(2, :), 'filled');
+    scatter(S_gre(SM_ref & SM_oli_filt), S_t1w(SM_ref & SM_oli_filt), psize, Col(3, :), 'filled');
+	scatter(S_gre(SM_ref & ~SM_oli_filt), S_t1w(SM_ref & ~SM_oli_filt), psize, Col(4, :), 'filled');
     xlabel('\bf T2*W in arb. units');
     ylabel('\bf T1W in arb. units');
     % Show thresholds
@@ -164,12 +165,65 @@ for idx_lab = 1:N_lab
     
     % save figure
 	save_ps_figure(Out_name, H);
+    
+    % Distributions
+    H = figure;
+    subplot(3, 1, 1);
+    plot_rddist(S_gre, S_t1w, SM_voi, Ret.I_ntis_means(idx_lab, :), C_ntis, RDs);
+    
+    subplot(3, 1, 2);
+    plot_intdist(S_gre, SM_voi, SM_ntis, I_gre_min, Ret.I_ntis_means(idx_lab, 1), 'T2*w');
+    
+    subplot(3, 1, 3);
+	plot_intdist(S_t1w, SM_voi, SM_ntis, [I_t1w_min I_t1w_max], Ret.I_ntis_means(idx_lab, 2), 'T1w');
+    
+	% save figure
+	save_ps_figure(Out_name, H);
 end
+
+
+%% Plot robust distance distribution
+function plot_rddist(S_gre, S_t1w, SM_voi, I_ntis_mean, C_ntis, RDs)
+% 
+Mat = [S_gre(SM_voi) S_t1w(SM_voi)];
+MD_ntis_oli_ref = (mahalanobis(Mat, I_ntis_mean, 'cov', C_ntis));
+[Y1, X] = plot_hist(MD_ntis_oli_ref, [], [], 'b', 0);
+N_samp = length(MD_ntis_oli_ref);
+if N_samp < 1000
+	N_samp = 1000;
+end
+Y2 = hist(chi2rnd(2, N_samp, 1), X);
+hold off;
+plot_bar2(X, Y1, Y2, 'RD', 'Chi2');
+hold on;
+xlabel('\bf Robust distances in arb. units');
+ylabel('\bf Occurrence');
+title(sprintf('N=%d', sum(SM_voi(:))));
+vline(RDs(1), 'r', '');
+vline(RDs(2), 'g', '');
+
+
+%% Plot intensity distribution
+function plot_intdist(S, SM_voi, SM_antis, Thr, DistMean, ti)
+[Y1, X] = plot_hist(S(SM_voi), [], [], 'g', 0);
+Y2 = hist(S(SM_antis), X);
+hold off;
+plot_bar2(X, Y1, Y2, 'VOI', 'Nor');
+hold on;
+xlabel(['\bf ' ti ' in arb. units']);
+ylabel('\bf Occurrence');
+title(sprintf('N=%d', sum(SM_antis(:))));
+if ~isempty(Thr)
+    N_thr = length(Thr);
+    for idx = 1:N_thr
+        vline(Thr(idx), 'g', '');
+    end
+end
+vline(DistMean, 'b', '');
 
 
 %% Plot mahalanobis distance against sqrt of chi2 distribution
 function plot_mahalanobis(S_gre, S_t1w, SM_voi, I_ntis_mean, C_ntis, RDs)
-
 % QQ plot
 Mat = [S_gre(SM_voi) S_t1w(SM_voi)];
 MD_ntis_oli_ref = (mahalanobis(Mat, I_ntis_mean, 'cov', C_ntis));
