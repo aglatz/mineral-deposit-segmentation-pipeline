@@ -146,7 +146,8 @@ if ~isempty(S_ref)
     scatter(S_gre(SM_ref & SM_out), S_t1w(SM_ref & SM_out), 10, Col(3, :));
     scatter(S_gre(SM_ref & ~SM_out), S_t1w(SM_ref & ~SM_out), 10, Col(4, :));
 end
-title(sprintf('Sum: %d', sum(SM_out(:))));
+[R, P] = corrcoef(I_ntis_means_iter);
+title(sprintf('Sum: %d; %0.2f, %0.2f', sum(SM_out(:)), R(1, 2), P(1, 2)));
 axis equal;
 save_ps_figure(ReportFile, H);
 
@@ -207,3 +208,5 @@ Ret.Input.IntvarP = IntvarP;
 % Add intermediate results to output
 Ret.I_gre_thr = I_gre_thr;
 Ret.IntVar = {IntVar};
+Ret.rho = R(1, 2);
+Ret.p_rho = P(1, 2);
