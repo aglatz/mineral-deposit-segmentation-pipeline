@@ -11,7 +11,7 @@ if ~isempty(basename)
     if ~strcmp(ext, '.ps')
         ext = '.ps';
     end
-    basename = [path '/' name];
+    basename = fullfile(path, name);
     if ~isempty(handle)
         %set(handle, 'PaperType', 'a4');
         set(handle, 'PaperUnits', 'centimeters');

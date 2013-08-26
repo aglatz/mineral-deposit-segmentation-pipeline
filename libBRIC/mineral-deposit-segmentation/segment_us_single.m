@@ -55,7 +55,7 @@ end
 % Subject = '/home/aglatz/tmp/mineral/1/13522';
 % Delete previous version of report file
 if ~isempty(ReportName)
-    ReportFile = [Subject '/' ReportName];
+    ReportFile = fullfile(Subject, ReportName);
     save_ps_figure(ReportFile, []); % Deletes previous file
 else
     ReportFile = [];
@@ -63,7 +63,7 @@ end
 
 % Read ROI
 RoiName = 'RO_mask';
-RoiFile = [Subject '/' RoiName];
+RoiFile = fullfile(Subject, RoiName);
 S_roi = load_series(RoiFile, []);
 Roi = roi_init(S_roi);
 S_roi = load_series_interp(RoiFile, roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
@@ -77,16 +77,16 @@ S_roi = load_series_interp(RoiFile, roi_nifti_sliceno(Roi, []), 'nearest', Inter
 % Read Reference
 try
     FeName = 'FE_roi_mask';
-    S_ref = load_series_interp([Subject '/' FeName], roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
+    S_ref = load_series_interp(fullfile(Subject, FeName), roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
 catch
     S_ref = [];
 end
 
 % Read T2sw/T1w volumes
 T2swName = 'GRE_brain_restore';
-S_gre = double(load_series_interp([Subject '/' T2swName], roi_nifti_sliceno(Roi, []), 'fft', InterpFactor));
+S_gre = double(load_series_interp(fullfile(Subject, T2swName), roi_nifti_sliceno(Roi, []), 'fft', InterpFactor));
 T1wName = 'T1W_brain_restore';
-S_t1w = double(load_series_interp([Subject '/' T1wName], roi_nifti_sliceno(Roi, []), 'fft', InterpFactor));
+S_t1w = double(load_series_interp(fullfile(Subject, T1wName), roi_nifti_sliceno(Roi, []), 'fft', InterpFactor));
 
 % Initialize output variables and start segmentation
 N_iter = length(RoiLabelTable);
@@ -153,17 +153,17 @@ save_ps_figure(ReportFile, H);
 
 % Change resolution of masks
 T2swHypoMaskName = 'T2swHypo_mask';
-S_out_all = interp_series([Subject '/' RoiName], S_out_all, ...
+S_out_all = interp_series(fullfile(Subject, RoiName), S_out_all, ...
                 roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
-S_out_hypo_all = interp_series([Subject '/' RoiName], S_out_hypo_all, ...
+S_out_hypo_all = interp_series(fullfile(Subject, RoiName), S_out_hypo_all, ...
                 roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
-S_out_hyper_all = interp_series([Subject '/' RoiName], S_out_hyper_all, ...
+S_out_hyper_all = interp_series(fullfile(Subject, RoiName), S_out_hyper_all, ...
                 roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
-S_ntis_all = interp_series([Subject '/' RoiName], S_ntis_all, ...
+S_ntis_all = interp_series(fullfile(Subject, RoiName), S_ntis_all, ...
                 roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
             
 % Morphological filtering
-NII = load_series([Subject '/' RoiName], 0);
+NII = load_series(fullfile(Subject, RoiName), 0);
 F = NII.hdr.dime.pixdim(2:4);
 [SM_oli, CC, IntVar] = intvar_filter(logical(S_out_all), S_gre, S_roi, ...
                                     logical(S_ntis_all), logical(S_out_hypo_all), ...
@@ -174,17 +174,17 @@ S_out_hyper_all(~SM_oli) = 0;
 
 if SaveMaskFlag
     % Save masks
-    save_series([Subject '/' RoiName], [Subject '/' T2swHypoMaskName], ...
+    save_series(fullfile(Subject,  RoiName), fullfile(Subject, T2swHypoMaskName), ...
                 S_out_all, roi_nifti_sliceno(Roi, []));
-    save_series([Subject '/' RoiName], [Subject '/T2swHypoT1wHypo_mask'], ...
+    save_series(fullfile(Subject, RoiName), fullfile(Subject, 'T2swHypoT1wHypo_mask'), ...
                 S_out_hypo_all, roi_nifti_sliceno(Roi, []));
-    save_series([Subject '/' RoiName], [Subject '/T2swHypoT1wHyper_mask'], ...
+    save_series(fullfile(Subject, RoiName), fullfile(Subject, 'T2swHypoT1wHyper_mask'), ...
                 S_out_hyper_all, roi_nifti_sliceno(Roi, []));
     % Save non tissue mask
-    save_series_interp([Subject '/' RoiName], [Subject '/NonTis_mask'], ...
+    save_series_interp(fullfile(Subject, RoiName), fullfile(Subject, 'NonTis_mask'), ...
                        S_nontis_all, roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
     % Save norm tissue mask
-    save_series([Subject '/' RoiName], [Subject '/NormTis_mask'], ...
+    save_series(fullfile(Subject, RoiName), fullfile(Subject, 'NormTis_mask'), ...
                 S_ntis_all, roi_nifti_sliceno(Roi, []));
 end
 

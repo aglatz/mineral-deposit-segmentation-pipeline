@@ -67,8 +67,8 @@ if N_cpus > 1
     % pMatlab
     InputFile = [tempname '.mat'];
     save(InputFile);
-    idx = strfind(InputFile, '/');
-    Cmd = sprintf('InputFile=''%s'';pSegment_us', InputFile(idx(end)+1:end));
+    [~, name, ext] = fileparts(InputFile);
+    Cmd = sprintf('InputFile=''%s'';pSegment_us', [name ext]);
     eval(pRUN(Cmd, N_cpus, {}));
     delete(InputFile);
 else

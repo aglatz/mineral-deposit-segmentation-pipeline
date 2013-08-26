@@ -10,7 +10,7 @@ if ~isempty(ext)
     if strcmp(ext, '.gz')
         do_gzip = true;
         if ~isempty(path)
-            name_ext = [path '/' name];
+            name_ext = fullfile(path, name);
         else
             name_ext = name;
         end
@@ -20,7 +20,7 @@ if ~isempty(ext)
     end
 else
     do_gzip = true;
-    name_ext = [basename '.nii'];    
+    name_ext = [basename '.nii'];
 end
 if ~isfield(NII,'untouch') || NII.untouch == 0
 	save_nii(NII, name_ext);

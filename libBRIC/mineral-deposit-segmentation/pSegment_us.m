@@ -17,7 +17,7 @@ close all; % No 'clear all' otherwise we loose our input variables!
 InputFileVar = 'InputFile';
 if exist(InputFileVar, 'var') > 0
     PMatDir = tempdir;
-    InputFile = [PMatDir '/' InputFile];
+    InputFile = fullfile(PMatDir, InputFile);
     load(InputFile);
 end
 
@@ -66,7 +66,7 @@ for idx_j = 1:size(OverLoc, 1);
 	fh = str2func(FuncName);
 	Ret = fh(Subject, RoiLabelTable, ReportName, InterpFactor, ...
              ThreshFactor, AdaptiveFlag, IntvarP);
-	save([Subject '/Ret.mat'], 'Ret');
+	save(fullfile(Subject, 'Ret.mat'), 'Ret');
 end
 
 if exist(InputFileVar, 'var') > 0
@@ -83,7 +83,7 @@ if ~Pid
     RetAll = Ret(end);
     % Combine all returned structures to a array of structures
     for i = 1:N_total
-        RetPath = [char(Subjects(i)) '/Ret.mat'];
+        RetPath = fullfile(char(Subjects(i)), 'Ret.mat');
         load(RetPath);
         RetAll(i) = Ret(end); % Last one is best one
     end

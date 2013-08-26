@@ -21,7 +21,7 @@ function [Ret] = validate(path, name, name_ref, name_base, name_voi, use_voi)
 %
 
 if use_voi
-    S_voi = load_series([path '/' name_voi], []);
+    S_voi = load_series(fullfile(path, name_voi), []);
     Roi = roi_init(S_voi);
 	slices = roi_nifti_sliceno(Roi, []);   
 else
@@ -29,17 +29,17 @@ else
 end
 
 % New mask
-SM = logical(load_series([path '/' name], slices));
-NII = load_series([path '/' name], 0);
+SM = logical(load_series(fullfile(path, name), slices));
+NII = load_series(fullfile(path, name), 0);
 F = NII.hdr.dime.pixdim(2:4);
 
 % Total gold standard mask
-SM_ref = logical(load_series([path '/' name_ref], slices));
+SM_ref = logical(load_series(fullfile(path, name_ref), slices));
 
 if ~isempty(name_base)
 	% Approx. of gold standard mask (always bigger than gold
     % standard, but smaller than ROI).
-	SM_base = logical(load_series([path '/' name_base], slices));
+	SM_base = logical(load_series(fullfile(path, name_base), slices));
 else
     SM_base = [];
 end

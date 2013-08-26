@@ -15,7 +15,7 @@ if strcmp(ext, '.gz')
     [tmp1, name, tmp2] = fileparts(name);
 end
 if ~isempty(path)
-    basename = [ path '/' name ];
+    basename = fullfile(path, name);
 else
     basename = name;
 end

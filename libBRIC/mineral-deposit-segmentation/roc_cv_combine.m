@@ -18,7 +18,7 @@ for idx_dir = 1:N_cv
     J_mean = zeros(N_thr, 1);
     
     for idx_thr = 1:N_thr
-        [~, J] = load_matdata([num2str(idx_dir) '/hu_' num2str(Thr(idx_thr)) '_' Pfx '.mat']);
+        [~, J] = load_matdata(fullfile(num2str(idx_dir), ['hu_' num2str(Thr(idx_thr)) '_' Pfx '.mat']));
         J_mean(idx_thr) = quantile(J, .5);
     end    
 

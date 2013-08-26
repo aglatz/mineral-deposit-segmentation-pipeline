@@ -34,7 +34,7 @@ for i=1:N_total
     Ret(ret_idx).Path = path;
     fprintf('Reading subject data for subject %s...', path);
     
-    S_fe = load_series([path '/' fe_name], []);
+    S_fe = load_series(fullfile(path, fe_name), []);
     N_fe = sum(logical(S_fe(:)));
     fprintf('%d voxels...', N_fe);
     
@@ -45,17 +45,17 @@ for i=1:N_total
             conncomp_stats(path, fe_name, 0, roi_name, 1, 1, gre_name);
 
         % Labels of ROI mask
-        S_roi = load_series([path '/' roi_name], []);
+        S_roi = load_series(fullfile(path, roi_name), []);
         Lab_roi = unique(S_roi(:))';
         Ret(ret_idx).Lab_roi = Lab_roi(2:end); % creates list of roi labels
         
         % Labels of ID mask
-        S_fe = load_series([path '/' fe_name], []);
+        S_fe = load_series(fullfile(path, fe_name), []);
         Ret(ret_idx).Lab = S_fe(logical(S_fe))'; % creates a line vector
         
         % ICV
-        SM_brain = logical(load_series([path '/' icv_name], []));
-        NII_brain = load_series([path '/' icv_name], 0);
+        SM_brain = logical(load_series(fullfile(path, icv_name), []));
+        NII_brain = load_series(fullfile(path, icv_name), 0);
         Ret(ret_idx).ICV = get_volume(SM_brain, ...
                                 NII_brain.hdr.dime.pixdim(2:4));
                             
