@@ -40,6 +40,8 @@ function [Ret, CC] = segment_us_single(Subject, RoiLabelTable, ReportName, ...
 %         which is the T2*w threshold.
 %
 % EXAMPLE:
+%   addpath('LIBRA/') % e.g. symbolic link to LIBRA toolbox
+%   addpath('NIFTI/') % e.g. symbolic link to NIFTI toolbox
 %   Subject = '/home/aglatz/tmp/mineral/2/13779';
 %   RoiLabelTable = {[13 11 12 14]};
 %   ThreshFactor = [1 0];
@@ -81,10 +83,10 @@ Roi = roi_init(S_roi);
 S_roi = load_series_interp(RoiFile, roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
 
 % Pool signal intensities from corresponding left and right hemisphere structures
-% S_roi(S_roi == 50) = 11;
-% S_roi(S_roi == 51) = 12;
-% S_roi(S_roi == 52) = 13;
-% S_roi(S_roi == 55) = 14;
+S_roi(S_roi == 50) = 11;
+S_roi(S_roi == 51) = 12;
+S_roi(S_roi == 52) = 13;
+S_roi(S_roi == 55) = 14;
 
 % Read Reference
 try

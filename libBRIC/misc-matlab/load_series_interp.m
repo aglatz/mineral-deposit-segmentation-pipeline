@@ -5,8 +5,11 @@ function S = load_series_interp(fname, slices, method, F)
 %         method - either 'fft' or interpolation method of 'interp3'
 %         F - Interpolation factor (1 - no interpolation, >1 upsampling, ...)
 %
-S_orig_data = load_series(fname, []);
-S = interp_series(fname, S_orig_data, slices, method, F);
-
+if F == 1
+    S = load_series(fname, slices);
+else
+    S_orig_data = load_series(fname, []);
+    S = interp_series(fname, S_orig_data, slices, method, F);
+end
 
        
