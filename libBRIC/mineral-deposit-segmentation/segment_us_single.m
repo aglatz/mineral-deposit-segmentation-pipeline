@@ -83,10 +83,10 @@ Roi = roi_init(S_roi);
 S_roi = load_series_interp(RoiFile, roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
 
 % Pool signal intensities from corresponding left and right hemisphere structures
-S_roi(S_roi == 50) = 11;
-S_roi(S_roi == 51) = 12;
-S_roi(S_roi == 52) = 13;
-S_roi(S_roi == 55) = 14;
+% S_roi(S_roi == 50) = 11;
+% S_roi(S_roi == 51) = 12;
+% S_roi(S_roi == 52) = 13;
+% S_roi(S_roi == 55) = 14;
 
 % Read Reference
 try
