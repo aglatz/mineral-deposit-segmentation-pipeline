@@ -78,7 +78,7 @@ else
 end
 
 % Collect result data in parent process (Pid=0)
-if ~Pid
+if ~exist('Pid','var') || ~Pid
     % Init return structure
     RetAll = Ret(end);
     % Combine all returned structures to a array of structures

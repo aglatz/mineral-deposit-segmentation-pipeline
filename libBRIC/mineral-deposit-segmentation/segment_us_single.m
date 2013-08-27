@@ -39,6 +39,18 @@ function [Ret, CC] = segment_us_single(Subject, RoiLabelTable, ReportName, ...
 % OUTPUT: The structure from validate_raw() plus additional element
 %         which is the T2*w threshold.
 %
+% EXAMPLE:
+%   Subject = '/home/aglatz/tmp/mineral/2/13779';
+%   RoiLabelTable = {[13 11 12 14]};
+%   ThreshFactor = [1 0];
+%   AdaptiveFlag = true;
+%   ReportName = 'class';
+%   IntvarP = 0.45;
+%   InterpFactor = 1;
+%   segment_us_single(Subject, RoiLabelTable, ReportName, ...
+%                     InterpFactor, ThreshFactor, ...
+%                     AdaptiveFlag, IntvarP);
+%
 
 % Process optional args
 N_vain = length(varargin);
@@ -52,7 +64,7 @@ for idx_vain = 1:N_vain
         end
     end
 end
-% Subject = '/home/aglatz/tmp/mineral/1/13522';
+
 % Delete previous version of report file
 if ~isempty(ReportName)
     ReportFile = fullfile(Subject, ReportName);
