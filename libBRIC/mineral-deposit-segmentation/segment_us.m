@@ -119,7 +119,7 @@ for idx_lab = 1:N_lab
     
     % Get normal tissue, candidate outliers and thresholds
     [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, Ret.I_ntis_means(idx_lab, :), C_ntis, RDs] = ...
-        get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi, adaptive_flag);
+        get_normal_outliers(S_gre, S_t1w, SM_antis, adaptive_flag);
     Ret.S_nontis = Ret.S_nontis + cast(SM_oli, class(Ret.S_nontis)) .* Lab(idx_lab);
     Ret.S_ntis = Ret.S_ntis + cast(SM_ntis, class(Ret.S_ntis)) .* Lab(idx_lab);
     
@@ -288,7 +288,7 @@ SM_oli_t1whyper(SM_oli) = Mat(:, 2) >= I_t1w_max;
 
 %% Split normal and outlier intensities
 function [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, I_ntis_mean, C_ntis, RDs] = ...
-    get_normal_outliers(S_gre, S_t1w, SM_antis, SM_voi, adaptive_flag)
+    get_normal_outliers(S_gre, S_t1w, SM_antis, adaptive_flag)
 
 Mat = [S_gre(SM_antis) S_t1w(SM_antis)];
 
@@ -321,10 +321,10 @@ RDs = [delta RD_cutoff];
 
 % Thresholding
 M = RD <= RD_cutoff;
-SM_ntis = SM_voi;
-SM_ntis(SM_voi) = M;
-SM_oli = SM_voi;
-SM_oli(SM_voi) = ~M;
+SM_ntis = SM_antis;
+SM_ntis(SM_antis) = M;
+SM_oli = SM_antis;
+SM_oli(SM_antis) = ~M;
 
 % Calculate GRE threshold with refined RD
 I_gre_min = -sqrt(C_ntis(1,1)*RD_cutoff)+I_ntis_mean(1);
