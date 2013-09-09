@@ -1,5 +1,5 @@
-function [SM_roi, GM_2, I_ntis_means] = get_antissue(S_gre, S_t1w, SM_roi, ...
-                                                  I_ntis_mean_est, N_comp_max)
+function [I_antis_mean, C_antis, SM_antis, GM_2] = ...
+            get_antissue(S_gre, S_t1w, SM_roi, I_ntis_mean_est, N_comp_max)
 % Applies the logical mask 'SM_roi' to the volumes 'S_gre' and 'S_t1w', 
 % to obtain a bivariate T2*- and T1-weighted signal intensity distribution.
 % Then a unimodal, multivariate Gaussian distribution and N=2...N_comp_max
@@ -14,8 +14,10 @@ function [SM_roi, GM_2, I_ntis_means] = get_antissue(S_gre, S_t1w, SM_roi, ...
 %         SM_roi - Logical ROI mask
 %         I_ntis_mean_est - estimated normal tissue mean intensities
 %         N_comp_max - max. number of Gaussian mixture components
-% RETURNS: SM_roi - Reduced logical ROI mask that just selects normal-appearing
-%                   tissue.
+% RETURNS: I_antis_mean - Robust mean T2*w/T1w tissue intensities
+%          C_antis - Robust covariance matrix
+%          SM_antis - Reduced logical ROI mask that just selects
+%                     approximately normally distributed tissue intensities
 %          GM_2 - Matlab structure of the fitted Gaussian mixture model
 %          I_ntis_means - Normal-appearing tissue signal intensity means
 %                         that were calculated with the 'SM_roi' mask.
@@ -95,9 +97,13 @@ if ~isnan(AICd) && AICd > 0
         diff = sqrt(sum((I_ntis_means - repmat(I_ntis_mean_est, N_Idx_u, 1)).^2, 2));
         idx = find(diff == min(diff), 1);
     end
-	SM_roi(SM_roi) = Idx == Idx_u(idx);
-	fprintf('#%d...', sum(SM_roi(:)));
+    SM_antis = SM_roi;
+	SM_antis(SM_roi) = Idx == Idx_u(idx);
+	fprintf('#%d...', sum(SM_antis(:)));
 else
+    SM_antis = SM_roi;
     GM_2 = [];
-    [~, I_ntis_means] = pcomp_find(Mat);
 end
+% Mean and covariance of approx. normal distr. tissue
+Mat = [S_gre(SM_antis) S_t1w(SM_antis)];
+[~, I_antis_mean, ~, ~, ~, C_antis] = pcomp_find(Mat);

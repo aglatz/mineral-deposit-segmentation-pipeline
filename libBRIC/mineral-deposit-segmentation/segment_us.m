@@ -42,7 +42,7 @@ function [Ret] = segment_us(S_gre, S_t1w, S_voi, S_ref, Lab, ...
 % ROI labels - Threshold I_gre_min_min is derived from the first label
 N_lab = length(Lab);
 % Colors for the plot: black - background, green - ok, red - not ok, blue - missing
-Col = [[0, 0, 0]; hsv(3)];
+Col = [[0, 0, 0]; hsv(4)];
 % Return structure
 Ret = struct;
 % Masks that selects the hypointense outlier intensities
@@ -69,6 +69,8 @@ for idx_vain = 1:N_vain
                 Out_name = varargin{idx_vain+1};
             case {'P_thr'}
                 P_thr = varargin{idx_vain+1};
+            case {'S_ref_ca'}
+                S_ref_ca = varargin{idx_vain+1};    
         end
     end
 end
@@ -82,9 +84,12 @@ for idx_lab = 1:N_lab
     else
         SM_ref = false(size(SM_voi));
     end
+    if exist('S_ref_ca', 'var') && ~isempty(S_ref_ca)
+        SM_ref = SM_ref & logical(S_ref_ca);
+    end
     
     % Figure for scatter and chi2 plots
-    H = figure; %create_ps_figure;  %figure;
+    H = figure;
 
     % Plot all tissue intensities
     subplot(2, 1, 1);
@@ -92,14 +97,17 @@ for idx_lab = 1:N_lab
     scatter(S_gre(SM_voi), S_t1w(SM_voi), psize, Col(1, :));
     hold on;
     
-	% Get approximately normally distributed intensities
-    if isempty(I_ntis_means_est)
-        I_ntis_mean_est = [];
-    else
+	% Get means and covariance matrix of approximately normally 
+    % distributed intensities (the mode of the GMM, which is closest
+    % to I_ntis_mean_est or the biggest cluster)
+    if ~isempty(I_ntis_means_est)
         I_ntis_mean_est = I_ntis_means_est(idx_lab, :);
+        scatter(I_ntis_mean_est(1), Intis_mean_est(2), 20, 'r', 'filled');
+    else
+        I_ntis_mean_est = [];
     end
-%     [SM_antis, GM_2] = get_antissue(S_gre, S_t1w, SM_voi, I_ntis_mean_est, 2);
-    [SM_antis, GM_2] = get_antissue(S_gre, S_t1w, SM_voi, I_ntis_mean_est, 1);
+    [Ret.I_ntis_means(idx_lab, :), C_ntis, SM_mode, GM_2] = ...
+        get_antissue(S_gre, S_t1w, SM_voi, I_ntis_mean_est, 1);
     
     % Plot approximately normally distributed intensities
     if ~isempty(GM_2)
@@ -108,22 +116,23 @@ for idx_lab = 1:N_lab
 %             ((GM_2.mu(1, :)+GM_2.mu(2, :)) / GM_2.Sigma) * (GM_2.mu(1, :)-GM_2.mu(2, :))';
 %         a1 = GM_2.Sigma \ (GM_2.mu(1, :)-GM_2.mu(2, :))';
 %         P=[-a1(1)/a1(2) -a0/a1(2)];
-%         X = min(S_gre(SM_antis)):10:max(S_gre(SM_antis));
+%         X = min(S_gre(SM_mode)):10:max(S_gre(SM_mode));
 %         Y = polyval(P, X);
 %         plot(X, Y, 'r');
 %         text(round(max(X)), round(max(Y)), sprintf('y = %0.2f x  + %0.2f', P(1), P(2)));
         
         % Selected cluster
-        scatter(S_gre(SM_antis), S_t1w(SM_antis), psize, 'c');
+        scatter(S_gre(SM_mode), S_t1w(SM_mode), psize, 'c');
+        scatter(Ret.I_ntis_means(idx_lab, 1), Ret.I_ntis_means(idx_lab, 2), 20, 'm', 'filled');
     end
     
     % Get normal tissue, candidate outliers and thresholds
-    [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, Ret.I_ntis_means(idx_lab, :), C_ntis, RDs] = ...
-        get_normal_outliers(S_gre, S_t1w, SM_antis, adaptive_flag);
+    [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, RDs] = ...
+        get_normal_outliers(S_gre, S_t1w, SM_voi, Ret.I_ntis_means(idx_lab, :), C_ntis, adaptive_flag);
     Ret.S_nontis = Ret.S_nontis + cast(SM_oli, class(Ret.S_nontis)) .* Lab(idx_lab);
     Ret.S_ntis = Ret.S_ntis + cast(SM_ntis, class(Ret.S_ntis)) .* Lab(idx_lab);
     
-    % Filter out outliers from segmentation, imaging and vessels.
+    % Thresholding
     if isempty(I_gre_thr)
         % Derive threshold from first ROI
         if Lab(idx_lab) == Lab(1)
@@ -134,6 +143,7 @@ for idx_lab = 1:N_lab
                 thresh_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_t1w_max, Ret.I_gre_thr, [], 1);
         end
     else
+        % Use user-defined threshold
         [SM_oli_filt, Ret.I_gre_thr, SM_oli_filt_t1whypo, SM_oli_filt_t1whyper] = ...
                 thresh_filter(S_gre, S_t1w, SM_oli, I_gre_min, I_t1w_min, I_t1w_max, I_gre_thr, [], 0);
     end
@@ -269,12 +279,12 @@ end
 
 % Morphological reconstruction
 Mat = [S_gre(SM_oli) S_t1w(SM_oli)];
-SM_oli_marker = SM_oli; % Marker volume: apply T1W&GRE thresholds (soft)
-SM_oli_marker(SM_oli) = Mat(:, 1) < I_gre_thr ...
-                        & Mat(:, 2) > I_t1w_min & Mat(:, 2) < I_t1w_max;
+% SM_oli_marker = SM_oli; % Marker volume: apply T1W&GRE thresholds (soft)
+% SM_oli_marker(SM_oli) = Mat(:, 1) < I_gre_thr ...
+%                         & Mat(:, 2) > I_t1w_min & Mat(:, 2) < I_t1w_max;
 SM_oli(SM_oli) = Mat(:, 1) < I_gre_thr; % Mask volume: apply GRE threshold (hard)
-fprintf('Before morph. recon.: %d ...', sum(SM_oli(:)));
-SM_oli = imreconstruct(SM_oli_marker, SM_oli, 6);
+% fprintf('Before morph. recon.: %d ...', sum(SM_oli(:)));
+% SM_oli = imreconstruct(SM_oli_marker, SM_oli, 6);
 fprintf('After: %d.\n', sum(SM_oli(:)));
 
 % Save regions that are hypo- or hyperintense on T1w
@@ -287,14 +297,12 @@ SM_oli_t1whyper(SM_oli) = Mat(:, 2) >= I_t1w_max;
 
 
 %% Split normal and outlier intensities
-function [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, I_ntis_mean, C_ntis, RDs] = ...
-    get_normal_outliers(S_gre, S_t1w, SM_antis, adaptive_flag)
+function [SM_oli, SM_ntis, I_gre_min, I_t1w_min, I_t1w_max, RDs] = ...
+    get_normal_outliers(S_gre, S_t1w, SM_voi, I_ntis_mean, C_ntis, adaptive_flag)
 
-Mat = [S_gre(SM_antis) S_t1w(SM_antis)];
+Mat = [S_gre(SM_voi) S_t1w(SM_voi)];
 
-% Mean and covariance of approx. normal distr. tissue
-[~, I_ntis_mean, ~, ~, ~, C_ntis] = pcomp_find(Mat);
-
+% Get robust distances of selected mode
 RD = mahalanobis(Mat, I_ntis_mean, 'cov', C_ntis);
 delta = chi2inv(0.975, size(Mat, 2)); % Only simulation values for 97.5%
 if adaptive_flag
@@ -321,10 +329,10 @@ RDs = [delta RD_cutoff];
 
 % Thresholding
 M = RD <= RD_cutoff;
-SM_ntis = SM_antis;
-SM_ntis(SM_antis) = M;
-SM_oli = SM_antis;
-SM_oli(SM_antis) = ~M;
+SM_ntis = SM_voi;
+SM_ntis(SM_voi) = M;
+SM_oli = SM_voi;
+SM_oli(SM_voi) = ~M;
 
 % Calculate GRE threshold with refined RD
 I_gre_min = -sqrt(C_ntis(1,1)*RD_cutoff)+I_ntis_mean(1);

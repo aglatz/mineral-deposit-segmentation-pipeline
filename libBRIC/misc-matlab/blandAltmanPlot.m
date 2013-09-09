@@ -22,6 +22,8 @@ y = y_old;
 % Quantile regression
 [p, stats] = quantreg(x, y, .5);
 middle_sorted = polyval(p, x);
+[pp] = polyfit(x, y, 1);
+mean_sorted = polyval(pp, x);
 [p_upper, stats] = quantreg(x, y, .95);
 upper_sorted = polyval(p_upper, x);
 [p_lower, stats] = quantreg(x, y, .05);
@@ -49,11 +51,12 @@ Idx = meanAB_sorted_idx(M);
 scatter(meanAB(Idx), difff(Idx), 20, '+r');
 
 % Plot regression lines
-plot(meanAB_sorted, middle_sorted, 'b');
-plot(meanAB_sorted, upper_sorted, ':b');
-plot(meanAB_sorted, lower_sorted, ':b');
-plot(meanAB_sorted, upper75_sorted, '--b');
-plot(meanAB_sorted, lower25_sorted, '--b');
+plot(meanAB_sorted, middle_sorted, 'b', 'linewidth', 2);
+plot(meanAB_sorted, mean_sorted, '--k', 'linewidth', 2);
+plot(meanAB_sorted, upper_sorted, ':b', 'linewidth', 1);
+plot(meanAB_sorted, lower_sorted, ':b', 'linewidth', 1);
+plot(meanAB_sorted, upper75_sorted, '--b', 'linewidth', 1);
+plot(meanAB_sorted, lower25_sorted, '--b', 'linewidth', 1);
 
 xlim([min(meanAB) max(meanAB)]);
 xlabel('\bf Average volume in mm^3');
