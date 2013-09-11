@@ -95,6 +95,13 @@ try
 catch
     S_ref = [];
 end
+try
+    CaName = 'T1W_hypo_mask';
+    S_tmp = logical(load_series_interp(fullfile(Subject, CaName), roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor));
+    S_ref_ca = S_tmp & logical(S_ref);
+catch
+    S_ref_ca = [];
+end
 
 % Read T2sw/T1w volumes
 T2swName = 'GRE_brain_restore';
@@ -111,6 +118,7 @@ S_nontis_all = zeros(size(S_roi), class(S_roi));
 S_ntis_all = zeros(size(S_roi), class(S_roi));
 I_ntis_means = cell(N_iter, 1);
 I_gre_thr = zeros(N_iter, 1);
+Fit = cell(N_iter, 1);
 for idx_iter = 1:N_iter
     Labs = RoiLabelTable{idx_iter};
 %     N_labs = length(Labs);
@@ -138,9 +146,10 @@ for idx_iter = 1:N_iter
     S_out_hyper_all = S_out_hyper_all + Ret.S_out_hyper;
     S_nontis_all = S_nontis_all + Ret.S_nontis;
     S_ntis_all = S_ntis_all + Ret.S_ntis;
+	% Save for later...
     I_ntis_means{idx_iter} = Ret.I_ntis_means;
-    % Save for later...
     I_gre_thr(idx_iter) = Ret.I_gre_thr;
+    Fit{idx_iter} = Ret.Fit;
 end
 
 % Summary plot
@@ -160,9 +169,8 @@ if ~isempty(S_ref)
     scatter(S_gre(SM_ref & SM_out), S_t1w(SM_ref & SM_out), 10, Col(3, :));
     scatter(S_gre(SM_ref & ~SM_out), S_t1w(SM_ref & ~SM_out), 10, Col(4, :));
 end
-[R, P] = corrcoef(I_ntis_means_iter);
-title(sprintf('Sum: %d; %0.2f, %0.2f', sum(SM_out(:)), R(1, 2), P(1, 2)));
-axis equal;
+title(sprintf('Sum: %d; %0.2f, %0.2f', sum(SM_out(:))));
+% axis equal;
 save_ps_figure(ReportFile, H);
 
 % Change resolution of masks
@@ -209,6 +217,12 @@ else
     % Fake validation just to get the volume
     Ret = validate_raw(S_out_all, S_out_all, [], F);
 end
+if ~isempty(S_ref_ca)
+    Ret.CA = validate_raw(S_out_hypo_all, S_ref_ca, [], F);
+else
+    % Fake validation just to get the volume
+    Ret.CA = validate_raw(S_out_all, S_out_all, [], F);
+end
 
 % Add Input parameters to output
 Ret.Input.Subject = Subject;
@@ -222,5 +236,5 @@ Ret.Input.IntvarP = IntvarP;
 % Add intermediate results to output
 Ret.I_gre_thr = I_gre_thr;
 Ret.IntVar = {IntVar};
-Ret.rho = R(1, 2);
-Ret.p_rho = P(1, 2);
+Ret.I_ntis_means = I_ntis_means;
+Ret.Fit = Fit;
