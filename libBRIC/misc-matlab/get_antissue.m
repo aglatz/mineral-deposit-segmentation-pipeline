@@ -64,41 +64,17 @@ if ~isnan(AICd) && AICd > 0
     Idx_u = unique(Idx)';
     N_Idx_u = length(Idx_u);
     
-    if isempty(I_ntis_mean_est)
-        % Keep the cluster that's more 'normal'
-        P = zeros(N_Idx_u, 1);
-        N = zeros(N_Idx_u, 1);
-        for idx = 1:N_Idx_u
-            try
-                M = Idx == Idx_u(idx);
-                [tmp, P1] = lillietest(Mat(M, 1));
-                [tmp, P2] = lillietest(Mat(M, 2));
-                N(idx) = sum(M);
-                P(idx) = (1-P1)*(1-P2);
-            catch
-                % Leave P at 0 if there are e.g. too few samples
-            end
-        end
-        idx = find(P == max(P));
-        if length(idx) > 1
-            idx = find(N == max(N));
-        end
-    else
-        % Keep the cluster with the mean closest to the estimated one
-        I_ntis_means = zeros(N_Idx_u, 2);
-        for idx = 1:N_Idx_u
-            try
-                [~, I_ntis_means(idx, :)] = pcomp_find(Mat(Idx == Idx_u(idx), :));
-            catch
-                % Switch to median if there are e.g. too few samples
-                I_ntis_means(idx, :) = median(Mat(Idx == Idx_u(idx), :));
-            end
-        end
-        diff = sqrt(sum((I_ntis_means - repmat(I_ntis_mean_est, N_Idx_u, 1)).^2, 2));
-        idx = find(diff == min(diff), 1);
+    % Find biggest cluster
+    N = zeros(N_Idx_u, 1);
+    for idx = 1:N_Idx_u
+        M = Idx == Idx_u(idx);
+        N(idx) = sum(M);
     end
+    M = N == max(N);
+
+    % Generate mask
     SM_antis = SM_roi;
-	SM_antis(SM_roi) = Idx == Idx_u(idx);
+	SM_antis(SM_roi) = Idx == Idx_u(M);
 	fprintf('#%d...', sum(SM_antis(:)));
 else
     SM_antis = SM_roi;
