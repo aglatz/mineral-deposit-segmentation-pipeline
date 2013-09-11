@@ -55,6 +55,8 @@ Ret.S_nontis = zeros(size(S_voi), class(S_voi));
 Ret.S_ntis = zeros(size(S_voi), class(S_voi));
 % Robust normal tissue means
 Ret.I_ntis_means = zeros(N_lab, 2);
+% Fit
+Ret.Fit = NaN(N_lab, 1);
 % Linear polynomial for adjusting the threshold
 P_thr = [1 0];
 % Name of file were plots get saved to
@@ -179,7 +181,7 @@ for idx_lab = 1:N_lab
     % Distributions
     H = figure;
     subplot(3, 1, 1);
-    plot_rddist(S_gre, S_t1w, SM_voi, Ret.I_ntis_means(idx_lab, :), C_ntis, RDs);
+    Ret.Fit(idx_lab) = plot_rddist(S_gre, S_t1w, SM_voi, SM_ntis, Ret.I_ntis_means(idx_lab, :), C_ntis);
     
     subplot(3, 1, 2);
     plot_intdist(S_gre, SM_voi, SM_ntis, I_gre_min, Ret.I_ntis_means(idx_lab, 1), 'T2*w');
@@ -193,24 +195,24 @@ end
 
 
 %% Plot robust distance distribution
-function plot_rddist(S_gre, S_t1w, SM_voi, I_ntis_mean, C_ntis, RDs)
+function [Fit] = plot_rddist(S_gre, S_t1w, SM_voi, SM_ntis, I_ntis_mean, C_ntis)
 % 
-Mat = [S_gre(SM_voi) S_t1w(SM_voi)];
+Mat = [S_gre(SM_ntis) S_t1w(SM_ntis)];
 MD_ntis_oli_ref = (mahalanobis(Mat, I_ntis_mean, 'cov', C_ntis));
 [Y1, X] = plot_hist(MD_ntis_oli_ref, [], [], 'b', 0);
 N_samp = length(MD_ntis_oli_ref);
-if N_samp < 1000
-	N_samp = 1000;
-end
 Y2 = hist(chi2rnd(2, N_samp, 1), X);
+% PD = ProbDistUnivParam('beta', [1, (N_samp-3)/2]);
+% f = ((N_samp-1)^2/N_samp);
+% Y2 = hist(random(PD, N_samp, 1)*f, X);
 hold off;
 plot_bar2(X, Y1, Y2, 'RD', 'Chi2');
 hold on;
 xlabel('\bf Robust distances in arb. units');
 ylabel('\bf Occurrence');
-title(sprintf('N=%d', sum(SM_voi(:))));
-vline(RDs(1), 'r', '');
-vline(RDs(2), 'g', '');
+Fit = sum((Y1-Y2).^2)/(length(Y1)-1);
+%[H, P] = chi2gof(MD_ntis_oli_ref/f, 'cdf', PD);
+title(sprintf('N_total=%d, N_norm=%d, Fit=%0.3f', sum(SM_voi(:)), sum(SM_ntis(:)), Fit));
 
 
 %% Plot intensity distribution
