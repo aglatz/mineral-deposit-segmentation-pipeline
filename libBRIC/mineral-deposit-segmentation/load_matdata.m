@@ -1,4 +1,4 @@
-function [Subjects, J, D, V, V_ref, IntVarP] = load_matdata(MatName)
+function [Subjects, J, D, V, V_ref, IntVarP, Sens, Spec] = load_matdata(MatName, varargin)
 load(MatName);
 if exist('out', 'var')
     Ret = [out.Ret];
@@ -11,9 +11,16 @@ if exist('out', 'var')
     end
 end
 
+Input = [Ret.Input];
+IntVarP = [Input.IntvarP];
+
+if nargin > 1 && varargin{1}
+    Ret = [Ret.CA];
+end
+
 J = [Ret.Jaccard];
 D = [Ret.Dice];
 V = [Ret.Vol];
 V_ref = [Ret.Vol_ref];
-Input = [Ret.Input];
-IntVarP = [Input.IntvarP];
+Sens = [Ret.Sensitivity];
+Spec = [Ret.Specificity];
