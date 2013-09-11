@@ -97,6 +97,7 @@ for idx_lab = 1:N_lab
     subplot(2, 1, 1);
     psize = 20;
     scatter(S_gre(SM_voi), S_t1w(SM_voi), psize, Col(1, :));
+    title(sprintf('ID=%d', Lab(idx_lab)));
     hold on;
     
 	% Get means and covariance matrix of approximately normally 
@@ -104,7 +105,7 @@ for idx_lab = 1:N_lab
     % to I_ntis_mean_est or the biggest cluster)
     if ~isempty(I_ntis_means_est)
         I_ntis_mean_est = I_ntis_means_est(idx_lab, :);
-        scatter(I_ntis_mean_est(1), Intis_mean_est(2), 20, 'r', 'filled');
+        scatter(I_ntis_mean_est(1), I_ntis_mean_est(2), 20, 'r', 'filled');
     else
         I_ntis_mean_est = [];
     end
@@ -181,7 +182,7 @@ for idx_lab = 1:N_lab
     % Distributions
     H = figure;
     subplot(3, 1, 1);
-    Ret.Fit(idx_lab) = plot_rddist(S_gre, S_t1w, SM_voi, SM_ntis, Ret.I_ntis_means(idx_lab, :), C_ntis);
+    Ret.Fit(idx_lab) = plot_rddist(S_gre, S_t1w, SM_voi, SM_ntis, Ret.I_ntis_means(idx_lab, :), C_ntis, RDs);
     
     subplot(3, 1, 2);
     plot_intdist(S_gre, SM_voi, SM_ntis, I_gre_min, Ret.I_ntis_means(idx_lab, 1), 'T2*w');
@@ -195,24 +196,23 @@ end
 
 
 %% Plot robust distance distribution
-function [Fit] = plot_rddist(S_gre, S_t1w, SM_voi, SM_ntis, I_ntis_mean, C_ntis)
+function [P_fit] = plot_rddist(S_gre, S_t1w, SM_voi, SM_ntis, I_ntis_mean, C_ntis, RDs)
 % 
 Mat = [S_gre(SM_ntis) S_t1w(SM_ntis)];
+% Mat = mvnrnd(I_ntis_mean, C_ntis, 500); % Test
 MD_ntis_oli_ref = (mahalanobis(Mat, I_ntis_mean, 'cov', C_ntis));
-[Y1, X] = plot_hist(MD_ntis_oli_ref, [], [], 'b', 0);
 N_samp = length(MD_ntis_oli_ref);
-Y2 = hist(chi2rnd(2, N_samp, 1), X);
-% PD = ProbDistUnivParam('beta', [1, (N_samp-3)/2]);
-% f = ((N_samp-1)^2/N_samp);
-% Y2 = hist(random(PD, N_samp, 1)*f, X);
-hold off;
-plot_bar2(X, Y1, Y2, 'RD', 'Chi2');
+C = chi2rnd(2, N_samp, 1);
+M = C < RDs(2);
+h = qqplot(C(M), MD_ntis_oli_ref);
 hold on;
-xlabel('\bf Robust distances in arb. units');
-ylabel('\bf Occurrence');
-Fit = sum((Y1-Y2).^2)/(length(Y1)-1);
-%[H, P] = chi2gof(MD_ntis_oli_ref/f, 'cdf', PD);
-title(sprintf('N_total=%d, N_norm=%d, Fit=%0.3f', sum(SM_voi(:)), sum(SM_ntis(:)), Fit));
+set(h(1), 'LineStyle', '-');
+set(h(1), 'Marker', 'none');
+xlabel('\bf Quantiles of the \chi^2 distribution (df=2)');
+ylabel('\bf Robust distances');
+H = NaN;
+P_fit = NaN;
+title(sprintf('N_{total}=%d, N_{norm}=%d', sum(SM_voi(:)), sum(SM_ntis(:))));
 
 
 %% Plot intensity distribution
