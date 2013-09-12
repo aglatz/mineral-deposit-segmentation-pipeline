@@ -42,9 +42,48 @@ if exist('FuncName', 'var') <= 0 || isempty(FuncName)
 end
 
 % Read subject file - last column contains the paths to the subject dirs
-[ndata, text, raw] = xlsread(SubjectFile); clear ndata text;
-Subjects = raw(:, size(raw, 2));
-N_total = length(Subjects);
+N_total = 0;
+try
+    [ndata, text, raw] = xlsread(SubjectFile); clear ndata text;
+    
+    % Get subject directories from last column
+    Subjects = raw(:, size(raw, 2));
+    N_total = length(Subjects);
+catch
+	fd = fopen(SubjectFile);
+    if fd >= 0
+        % Read all lines, ignore comments
+        raw = textscan(fd,	'%s', ...
+                            'delimiter', '\r\n', ...
+                            'commentStyle', '#');
+        fclose(fd);
+        raw = raw{1};
+        N_lines = length(raw);
+        
+        % Get subject directories from last column
+        Subjects = cell(N_lines, 1);
+        is_first = true;
+        N_total = 0;
+        for idx_line = 1:N_lines
+            line = textscan(raw{idx_line}, '%q', ...
+                                           'delimiter', ',');
+            line = line{1};
+            if is_first
+                N_elem = length(line);
+                is_first = false;
+            else
+                if length(line) ~= N_elem
+                    continue; % skip odd lines
+                end
+            end
+            Subjects(idx_line) = line(end);
+            N_total = N_total + 1;
+        end
+    end 
+end
+if N_total <= 0
+    error('pSegment_us:open', 'Cannot open input file!');
+end
 
 if exist(InputFileVar, 'var') > 0
     % pMatlab setup - Init shared matrix
