@@ -252,8 +252,7 @@ define copy_result
 if [ ! -z $${DST_PATH} ]; \
 then \
 	mkdir -p $${DST_PATH}; \
-	sh -c "rsync -azi $${OUT_FILES} $${DST_PATH} > $@.tmp"; \
-	rm -f $@.tmp; \
+	$(SCRIPT_DIR)copy_result.sh $${OUT_FILES} $${DST_PATH}; \
 fi;
 endef
 
@@ -832,7 +831,7 @@ $(L_SE_HARD_LORD): $(L_GRE_BRAIN_RESTORE_VOL) $(L_SE_HARD_MASK)
 	 echo "done."
 	@$(check_target)
 
-$(L_WM_MASK): $(L_SE_MASK) $(L_WM_REF_MASK) $(L_SE_HARD_LORD)
+$(L_WM_MASK): $(L_SE_HARD_MASK) $(L_WM_REF_MASK) $(L_SE_HARD_LORD)
 	@VOL=`$(SCRIPT_DIR)check_empty.sh $(FSL_BIN_PFX) $(L_WM_REF_MASK)`; \
 	 if [ $$? -eq 0 -a $$VOL -gt 0 ]; \
 	 then \
@@ -844,13 +843,13 @@ $(L_WM_MASK): $(L_SE_MASK) $(L_WM_REF_MASK) $(L_SE_HARD_LORD)
 	 fi;
 	@$(check_target)
 
-$(L_GM_MASK): $(L_SE_MASK) $(L_SE_HARD_LORD)
+$(L_GM_MASK): $(L_SE_HARD_MASK) $(L_SE_HARD_LORD)
 	@IDX=`$(SCRIPT_DIR)setup_environment.sh GM_IDX`; \
 	 TISS=`cat $(L_SE_HARD_LORD) | cut -d ' ' -f $$IDX`; \
 	 $(thr_mask)
 	@$(check_target)
 
-$(L_CS_MASK): $(L_SE_MASK) $(L_SE_HARD_LORD)
+$(L_CS_MASK): $(L_SE_HARD_MASK) $(L_SE_HARD_LORD)
 	@IDX=`$(SCRIPT_DIR)setup_environment.sh CS_IDX`; \
 	 TISS=`cat $(L_SE_HARD_LORD) | cut -d ' ' -f $$IDX`; \
 	 $(thr_mask)
