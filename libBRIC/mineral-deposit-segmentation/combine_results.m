@@ -1,20 +1,20 @@
 close all; clear all; clc
 
-Name = 'subjects_98';
-Pfx = 'ad_t1w0.975';
-N_cpus = 6;
+Name = 'subjects_asps_356';
+Pfx = 'ad_t1w0.975_t1wr2s_q0_45_both';
+N_cpus = 1;
 AdaptiveFlag = true;
-RoiLabelTable = {[13 11 12 14]};
-% [Ret, Subjects, Over] = segment_us_mp([Name '.xls'], ...
+RoiLabelTable = {[13 11 12 14], [52 50 51 55]};
+% [Ret, Subjects, Over] = segment_us_mp([Name '.csv'], ...
 %                                       RoiLabelTable, N_cpus, ...
 %                                       'ThreshFactor', [1 0], ...
 %                                       'AdaptiveFlag', AdaptiveFlag, ...
 %                                       'SaveMaskFlag', true, ...
 %                                       'ReportName', 'class', ...
-%                                       'IntvarP', 0.4);
+%                                       'IntvarP', 0.45);
 % save([Name '_' Pfx '.mat']);
 
-[Subjects, J, D, V, V_ref, IntVarP] = load_matdata([Name '_' Pfx '.mat']);
+[Subjects, J, D, V, V_ref, IntVarP] = load_matdata([Name '_' Pfx '.mat'], 0);
 
 fprintf('-- Jaccard (All) --');
 Q = [.25 .5 .75];
@@ -34,7 +34,7 @@ quantile(IntVarP, Q)
 
 M_vol = V > 0;
 M_vol_ref = V_ref > 0;
-M = M_vol & M_vol_ref;
+M = J > 0; %M_vol & M_vol_ref;
 
 fprintf('-- Jaccard --');
 Q = [.25 .5 .75];
@@ -62,11 +62,11 @@ M_fn = ~M_vol & M_vol_ref;
 
 fprintf('-- FP volume --');
 quantile(V(M_fp), Q)
-save_xls('FP', Subjects(M_fp));
+save_xls('FP', {'%s'}, Subjects(M_fp));
 
 fprintf('-- FN volume --');
 quantile(V(M_fn), Q)
-save_xls('FN', Subjects(M_fn));
+save_xls('FN', {'%s'}, Subjects(M_fn));
 
 fprintf('-- Confusion --');
 Conf = [[sum(M_tp) sum(M_fp)];
@@ -78,17 +78,17 @@ fprintf('-- Sens/Spec --');
 [Sens Spec]
 
 % Ba and Mba only with tp subjects
-Subjects = Subjects(M_tp);
+Subjects = Subjects(M);
 figure;
-Idx = blandAltmanPlot(V(M_tp), V_ref(M_tp))';
-set(gca, 'XScale', 'log');
-save_xls('BA_OLI', Subjects(Idx));
+Idx = blandAltmanPlot(V(M), V_ref(M))';
+% set(gca, 'XScale', 'log');
+save_xls('BA_OLI', {'%s'}, Subjects(Idx));
 set(gcf, 'color', 'white')
 
 figure;
-Idx = blandAltmanPlot(V(M_tp), V_ref(M_tp), J(M_tp))';
-set(gca, 'XScale', 'log');
-save_xls('MBA_OLI', Subjects(Idx));
+Idx = blandAltmanPlot(V(M), V_ref(M), J(M))';
+% set(gca, 'XScale', 'log');
+save_xls('MBA_OLI', {'%s'}, Subjects(Idx));
 set(gcf, 'color', 'white')
 
 % save('forR', 'V', 'V_ref', 'J', '-v6');

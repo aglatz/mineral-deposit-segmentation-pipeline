@@ -106,6 +106,7 @@ end
 % Read T2sw/T1w volumes
 T2swName = 'GRE_brain_restore';
 S_gre = double(load_series_interp(fullfile(Subject, T2swName), roi_nifti_sliceno(Roi, []), 'fft', InterpFactor));
+%S_gre = S_gre(:, :, :, 1);
 T1wName = 'T1W_brain_restore';
 S_t1w = double(load_series_interp(fullfile(Subject, T1wName), roi_nifti_sliceno(Roi, []), 'fft', InterpFactor));
 
@@ -169,8 +170,8 @@ if ~isempty(S_ref)
     scatter(S_gre(SM_ref & SM_out), S_t1w(SM_ref & SM_out), 10, Col(3, :));
     scatter(S_gre(SM_ref & ~SM_out), S_t1w(SM_ref & ~SM_out), 10, Col(4, :));
 end
-title(sprintf('Sum: %d; %0.2f, %0.2f', sum(SM_out(:))));
-% axis equal;
+title(sprintf('Sum: %d', sum(SM_out(:))));
+%axis equal;
 save_ps_figure(ReportFile, H);
 
 % Change resolution of masks
