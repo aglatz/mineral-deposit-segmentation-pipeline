@@ -21,7 +21,7 @@ meanAB_log10 = log10(meanAB);
 
 % Annotate axis
 xtick = unique(round(get(gca, 'XTick')));
-xlim([xtick(1)-0.05 xtick(end)+0.05]);
+xlim([min(meanAB_log10)-0.05 max(meanAB_log10)+0.05]);
 set(gca, 'XTick', xtick);
 set(gca, 'XTickLabel', num2str(10.^(xtick')));
 
