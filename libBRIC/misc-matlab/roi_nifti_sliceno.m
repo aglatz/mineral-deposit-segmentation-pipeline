@@ -5,5 +5,5 @@ function [sliceno] = roi_nifti_sliceno(Roi, sliceidx)
 if isempty(sliceidx)
     sliceidx = 1:roi_nslices(Roi);
 end
-sliceno = Roi.Num(sliceidx, 1);
+sliceno = min(Roi.Num(sliceidx, 1)):max(Roi.Num(sliceidx, 1));
 
