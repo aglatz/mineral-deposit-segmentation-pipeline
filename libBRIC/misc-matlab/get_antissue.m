@@ -82,4 +82,8 @@ else
 end
 % Mean and covariance of approx. normal distr. tissue
 Mat = [S_gre(SM_antis) S_t1w(SM_antis)];
-[~, I_antis_mean, ~, ~, ~, C_antis] = pcomp_find(Mat);
+REW = mcdcov(double(Mat), 'plots', 0, 'alpha', 0.5);
+I_antis_mean = REW.center;
+C_antis = REW.cov;
+
+

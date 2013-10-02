@@ -68,6 +68,7 @@ for idx_vain = 1:N_vain
 end
 
 % Delete previous version of report file
+% Subject = '~/tmp/mineral/1/13449';
 if ~isempty(ReportName)
     ReportFile = fullfile(Subject, ReportName);
     save_ps_figure(ReportFile, []); % Deletes previous file
@@ -80,78 +81,55 @@ RoiName = 'RO_mask';
 RoiFile = fullfile(Subject, RoiName);
 S_roi = load_series(RoiFile, []);
 Roi = roi_init(S_roi);
-S_roi = load_series_interp(RoiFile, roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
+S_roi = load_series(RoiFile, roi_nifti_sliceno(Roi, []));
 
 % Pool signal intensities from corresponding left and right hemisphere structures
-% S_roi(S_roi == 50) = 11;
-% S_roi(S_roi == 51) = 12;
-% S_roi(S_roi == 52) = 13;
-% S_roi(S_roi == 55) = 14;
+S_roi(S_roi == 50) = 11;
+S_roi(S_roi == 51) = 12;
+S_roi(S_roi == 52) = 13;
+S_roi(S_roi == 55) = 14;
 
 % Read Reference
 try
     FeName = 'FE_roi_mask';
-    S_ref = load_series_interp(fullfile(Subject, FeName), roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
+    S_ref = load_series(fullfile(Subject, FeName), roi_nifti_sliceno(Roi, []));
 catch
     S_ref = [];
-end
-try
-    CaName = 'T1W_hypo_mask';
-    S_tmp = logical(load_series_interp(fullfile(Subject, CaName), roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor));
-    S_ref_ca = S_tmp & logical(S_ref);
-catch
-    S_ref_ca = [];
 end
 
 % Read T2sw/T1w volumes
 T2swName = 'GRE_brain_restore';
-S_gre = double(load_series_interp(fullfile(Subject, T2swName), roi_nifti_sliceno(Roi, []), 'fft', InterpFactor));
-%S_gre = S_gre(:, :, :, 1);
-T1wName = 'T1W_brain_restore';
-S_t1w = double(load_series_interp(fullfile(Subject, T1wName), roi_nifti_sliceno(Roi, []), 'fft', InterpFactor));
+S_gre = double(load_series(fullfile(Subject, T2swName), roi_nifti_sliceno(Roi, [])));
+T1wName = 'T2W_brain_restore';
+S_t1w = double(load_series(fullfile(Subject, T1wName), roi_nifti_sliceno(Roi, [])));
 
 % Initialize output variables and start segmentation
 N_iter = length(RoiLabelTable);
-S_out_all = zeros(size(S_roi), class(S_roi));
-S_out_hypo_all = zeros(size(S_roi), class(S_roi));
-S_out_hyper_all = zeros(size(S_roi), class(S_roi));
-S_nontis_all = zeros(size(S_roi), class(S_roi));
-S_ntis_all = zeros(size(S_roi), class(S_roi));
+S_hypos = zeros(size(S_roi), class(S_roi));
+S_nontis = zeros(size(S_roi), class(S_roi));
+S_ntis = zeros(size(S_roi), class(S_roi));
 I_ntis_means = cell(N_iter, 1);
-I_gre_thr = zeros(N_iter, 1);
+I_thr = cell(N_iter, 1);
 Fit = cell(N_iter, 1);
 for idx_iter = 1:N_iter
     Labs = RoiLabelTable{idx_iter};
-%     N_labs = length(Labs);
-%
-%         % Heuristic to estimate the normal-appearing tissue means - works
-%         % for GRE and T1W of LBC1936 protocol
-%         I_ntis_means_all = NaN(N_labs, 2);
-%         for idx_lab = 1:N_labs
-%             SM_tmp = S_roi == Labs(idx_lab);
-%             Mat = [S_gre(SM_tmp) S_t1w(SM_tmp)];
-%             [~, I_ntis_means_all(idx_lab, :)] = pcomp_find(Mat);
-%         end
-%         Tmp = mcdregres(I_ntis_means_all(:, 2), I_ntis_means_all(:, 1), 'plots', 0);
-%         Est_param = [Tmp.slope Tmp.int];
-%         I_ntis_means_all_est = I_ntis_means_all;
-%         I_ntis_means_all_est(:, 1) = polyval(Est_param, I_ntis_means_all(:, 2));
 
     % Segmentation
     Ret = segment_us(S_gre, S_t1w, S_roi, S_ref, Labs, [], [], AdaptiveFlag, ...
                      'Out_name', ReportFile, 'P_thr', ThreshFactor);
 
-    % Store results
-    S_out_all = S_out_all + Ret.S_out;
-    S_out_hypo_all = S_out_hypo_all + Ret.S_out_hypo;
-    S_out_hyper_all = S_out_hyper_all + Ret.S_out_hyper;
-    S_nontis_all = S_nontis_all + Ret.S_nontis;
-    S_ntis_all = S_ntis_all + Ret.S_ntis;
-	% Save for later...
+    % Accumulate results
+    S_hypos = S_hypos + Ret.S_hypos;
+    S_nontis = S_nontis + Ret.S_nontis;
+    S_ntis = S_ntis + Ret.S_ntis;
     I_ntis_means{idx_iter} = Ret.I_ntis_means;
-    I_gre_thr(idx_iter) = Ret.I_gre_thr;
+    I_thr{idx_iter} = Ret.I_thr';
     Fit{idx_iter} = Ret.Fit;
 end
+
+% CC Filtering
+[S_hypos, S_hypos_hypo, S_hypos_hyper] = cc_filter(S_gre, S_t1w, S_roi, ...
+    logical(S_hypos), logical(S_ntis), IntvarP, [I_thr{:}]');
 
 % Summary plot
 H = figure; %create_ps_figure;
@@ -162,70 +140,44 @@ for idx_iter = 1:N_iter
     I_ntis_means_iter = I_ntis_means{idx_iter};
     scatter(I_ntis_means_iter(:, 1), I_ntis_means_iter(:, 2), 20, 'r');
 end
-SM_out = logical(S_out_all);
-Mat = [S_gre(SM_out) S_t1w(SM_out)];
+SM_hypos = logical(S_hypos);
+Mat = [S_gre(SM_hypos) S_t1w(SM_hypos)];
 scatter(Mat(:, 1), Mat(:, 2), 10, Col(2, :));
 if ~isempty(S_ref)
     SM_ref = logical(S_ref);
-    scatter(S_gre(SM_ref & SM_out), S_t1w(SM_ref & SM_out), 10, Col(3, :));
-    scatter(S_gre(SM_ref & ~SM_out), S_t1w(SM_ref & ~SM_out), 10, Col(4, :));
+    scatter(S_gre(SM_ref & SM_hypos), S_t1w(SM_ref & SM_hypos), 10, Col(3, :));
+    scatter(S_gre(SM_ref & ~SM_hypos), S_t1w(SM_ref & ~SM_hypos), 10, Col(4, :));
 end
-title(sprintf('Sum: %d', sum(SM_out(:))));
-%axis equal;
+title(sprintf('Hypointense voxels: %d', sum(SM_hypos(:))));
 save_ps_figure(ReportFile, H);
-
-% Change resolution of masks
-T2swHypoMaskName = 'T2swHypo_mask';
-S_out_all = interp_series(fullfile(Subject, RoiName), S_out_all, ...
-                roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
-S_out_hypo_all = interp_series(fullfile(Subject, RoiName), S_out_hypo_all, ...
-                roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
-S_out_hyper_all = interp_series(fullfile(Subject, RoiName), S_out_hyper_all, ...
-                roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
-S_ntis_all = interp_series(fullfile(Subject, RoiName), S_ntis_all, ...
-                roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
-            
-% Morphological filtering
-NII = load_series(fullfile(Subject, RoiName), 0);
-F = NII.hdr.dime.pixdim(2:4);
-[SM_oli, CC, IntVar] = intvar_filter(logical(S_out_all), S_gre, S_roi, ...
-                                    logical(S_ntis_all), logical(S_out_hypo_all), ...
-                                    F, IntvarP);
-S_out_all(~SM_oli) = 0;
-S_out_hypo_all(~SM_oli) = 0;
-S_out_hyper_all(~SM_oli) = 0;
 
 if SaveMaskFlag
     % Save masks
-    save_series(fullfile(Subject,  RoiName), fullfile(Subject, T2swHypoMaskName), ...
-                S_out_all, roi_nifti_sliceno(Roi, []));
-    save_series(fullfile(Subject, RoiName), fullfile(Subject, 'T2swHypoT1wHypo_mask'), ...
-                S_out_hypo_all, roi_nifti_sliceno(Roi, []));
-    save_series(fullfile(Subject, RoiName), fullfile(Subject, 'T2swHypoT1wHyper_mask'), ...
-                S_out_hyper_all, roi_nifti_sliceno(Roi, []));
+    save_series(RoiFile, fullfile(Subject, 'T2swHypo_mask'), ...
+                S_hypos, roi_nifti_sliceno(Roi, []));
+	save_series(RoiFile, fullfile(Subject, 'T2swHypoT1whypo_mask'), ...
+                S_hypos_hypo, roi_nifti_sliceno(Roi, []));
+	save_series(RoiFile, fullfile(Subject, 'T2swHypoT1whyper_mask'), ...
+                S_hypos_hyper, roi_nifti_sliceno(Roi, []));
     % Save non tissue mask
-    save_series_interp(fullfile(Subject, RoiName), fullfile(Subject, 'NonTis_mask'), ...
-                       S_nontis_all, roi_nifti_sliceno(Roi, []), 'nearest', InterpFactor);
+    save_series(RoiFile, fullfile(Subject, 'NonTis_mask'), ...
+                S_nontis, roi_nifti_sliceno(Roi, []));
     % Save norm tissue mask
-    save_series(fullfile(Subject, RoiName), fullfile(Subject, 'NormTis_mask'), ...
-                S_ntis_all, roi_nifti_sliceno(Roi, []));
+    save_series(RoiFile, fullfile(Subject, 'NormTis_mask'), ...
+                S_ntis, roi_nifti_sliceno(Roi, []));
 end
 
 % Validate
+NII = load_series(RoiFile, 0);
+F = NII.hdr.dime.pixdim(2:4);
 if ~isempty(S_ref)
-    Ret = validate_raw(S_out_all, S_ref, [], F);
+    Ret = validate_raw(S_hypos, S_ref, [], F);
 else
     % Fake validation just to get the volume
-    Ret = validate_raw(S_out_all, S_out_all, [], F);
-end
-if ~isempty(S_ref_ca)
-    Ret.CA = validate_raw(S_out_hypo_all, S_ref_ca, [], F);
-else
-    % Fake validation just to get the volume
-    Ret.CA = validate_raw(S_out_all, S_out_all, [], F);
+    Ret = validate_raw(S_hypos, S_hypos, [], F);
 end
 
-% Add Input parameters to output
+% Add input parameters to output
 Ret.Input.Subject = Subject;
 Ret.Input.RoiLabelTable = RoiLabelTable;
 Ret.Input.ReportName = ReportName;
@@ -234,8 +186,7 @@ Ret.Input.ThreshFactor = ThreshFactor;
 Ret.Input.AdaptiveFlag = AdaptiveFlag;
 Ret.Input.IntvarP = IntvarP;
 
-% Add intermediate results to output
-Ret.I_gre_thr = I_gre_thr;
-Ret.IntVar = {IntVar};
+% Add accumulated results to output
+Ret.I_thr = I_thr;
 Ret.I_ntis_means = I_ntis_means;
 Ret.Fit = Fit;
