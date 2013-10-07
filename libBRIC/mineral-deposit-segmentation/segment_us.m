@@ -52,7 +52,7 @@ Ret.S_nontis = zeros(size(S_voi), class(S_voi));
 % Mask selecting normal tissue
 Ret.S_ntis = zeros(size(S_voi), class(S_voi));
 % Robust normal tissue means
-Ret.I_ntis_means = zeros(N_lab, 2);
+Ret.I_ntis_means = zeros(N_lab, 3);
 % Segmentation thresholds
 Ret.I_thr = NaN(N_lab, 6);
 % Fit
@@ -109,8 +109,9 @@ for idx_lab = 1:N_lab
     else
         I_ntis_mean_est = [];
     end
-    [Ret.I_ntis_means(idx_lab, :), C_ntis, SM_mode, GM_2] = ...
+    [I_ntis_means, C_ntis, SM_mode, GM_2] = ...
         get_antissue(S_gre, S_t1w, SM_voi, I_ntis_mean_est, 1);
+    Ret.I_ntis_means(idx_lab, :) = [I_ntis_means, Lab(idx_lab)];
     
     % Plot approximately normally distributed intensities
     if ~isempty(GM_2)
@@ -126,23 +127,23 @@ for idx_lab = 1:N_lab
         
         % Selected cluster
         scatter(S_gre(SM_mode), S_t1w(SM_mode), psize, 'c');
-        scatter(Ret.I_ntis_means(idx_lab, 1), Ret.I_ntis_means(idx_lab, 2), 20, 'm', 'filled');
+        scatter(I_ntis_means(1), I_ntis_means(2), 20, 'm', 'filled');
     end
     
     % Get normal tissue, candidate outliers and thresholds
     [SM_oli, SM_ntis, RDs] = ...
-        get_normal_outliers(S_gre, S_t1w, SM_voi, Ret.I_ntis_means(idx_lab, :), C_ntis, adaptive_flag);
+        get_normal_outliers(S_gre, S_t1w, SM_voi, I_ntis_means, C_ntis, adaptive_flag);
     Ret.S_nontis = Ret.S_nontis + cast(SM_oli, class(Ret.S_nontis)) .* Lab(idx_lab);
     Ret.S_ntis = Ret.S_ntis + cast(SM_ntis, class(Ret.S_ntis)) .* Lab(idx_lab);
     
     % Thresholding (Derive threshold from first ROI if not given)
     if idx_lab == 1
         [SM_hypos, I_thr] = ...
-            thresh_filter(S_gre, S_t1w, SM_oli, Ret.I_ntis_means(idx_lab, :), C_ntis, ...
+            thresh_filter(S_gre, S_t1w, SM_oli, I_ntis_means, C_ntis, ...
                           RDs, P_thr, []);
     else
         [SM_hypos, I_thr] = ...
-            thresh_filter(S_gre, S_t1w, SM_oli, Ret.I_ntis_means(idx_lab, :), C_ntis, ...
+            thresh_filter(S_gre, S_t1w, SM_oli, I_ntis_means, C_ntis, ...
                           RDs, P_thr, I_thr);      
     end
     Ret.I_thr(idx_lab, :) = [I_thr, Lab(idx_lab)];
@@ -158,8 +159,8 @@ for idx_lab = 1:N_lab
     xlabel('\bf T2*W in arb. units');
     ylabel('\bf T1W in arb. units');
     % Show thresholds
-    ellipsplot_mod(Ret.I_ntis_means(idx_lab, :), C_ntis, [], 'b', RDs(1));
-    ellipsplot_mod(Ret.I_ntis_means(idx_lab, :), C_ntis, [], 'g', RDs(2));
+    ellipsplot_mod(I_ntis_means, C_ntis, [], 'b', RDs(1));
+    ellipsplot_mod(I_ntis_means, C_ntis, [], 'g', RDs(2));
     vline(I_thr(1), 'k', '');
     hline(I_thr(2), 'k--', '');
     hline(I_thr(3), 'k--', '');
@@ -168,7 +169,7 @@ for idx_lab = 1:N_lab
 
     % Plot mahalanobis against chi2
     subplot(2, 1, 2);
-    plot_mahalanobis(S_gre, S_t1w, SM_voi, Ret.I_ntis_means(idx_lab, :), C_ntis, RDs);
+    plot_mahalanobis(S_gre, S_t1w, SM_voi, I_ntis_means, C_ntis, RDs);
     
     % save figure
 	save_ps_figure(Out_name, H);
@@ -176,13 +177,13 @@ for idx_lab = 1:N_lab
     % Distributions
     H = figure;
     subplot(3, 1, 1);
-    Ret.Fit(idx_lab) = plot_rddist(S_gre, S_t1w, SM_voi, SM_ntis, Ret.I_ntis_means(idx_lab, :), C_ntis, RDs);
+    Ret.Fit(idx_lab) = plot_rddist(S_gre, S_t1w, SM_voi, SM_ntis, I_ntis_means, C_ntis, RDs);
     
     subplot(3, 1, 2);
-    plot_intdist(S_gre, SM_voi, SM_ntis, I_thr(1), Ret.I_ntis_means(idx_lab, 1), 'T2*w');
+    plot_intdist(S_gre, SM_voi, SM_ntis, I_thr(1), I_ntis_means(1), 'T2*w');
     
     subplot(3, 1, 3);
-	plot_intdist(S_t1w, SM_voi, SM_ntis, I_thr(2:5), Ret.I_ntis_means(idx_lab, 2), 'T1w');
+	plot_intdist(S_t1w, SM_voi, SM_ntis, I_thr(2:5), I_ntis_means(2), 'T1w');
     
 	% save figure
 	save_ps_figure(Out_name, H);

@@ -122,7 +122,7 @@ for idx_iter = 1:N_iter
     S_hypos = S_hypos + Ret.S_hypos;
     S_nontis = S_nontis + Ret.S_nontis;
     S_ntis = S_ntis + Ret.S_ntis;
-    I_ntis_means{idx_iter} = Ret.I_ntis_means;
+    I_ntis_means{idx_iter} = Ret.I_ntis_means';
     I_thr{idx_iter} = Ret.I_thr';
     Fit{idx_iter} = Ret.Fit;
 end
@@ -136,10 +136,8 @@ H = figure; %create_ps_figure;
 Col = [[0, 0, 0]; hsv(3)];
 scatter(S_gre(logical(S_roi)), S_t1w(logical(S_roi)), 10, Col(1, :));
 hold on;
-for idx_iter = 1:N_iter
-    I_ntis_means_iter = I_ntis_means{idx_iter};
-    scatter(I_ntis_means_iter(:, 1), I_ntis_means_iter(:, 2), 20, 'r');
-end
+I_ntis_means_list = [I_ntis_means{:}]';
+scatter(I_ntis_means_list(:, 1), I_ntis_means_list(:, 2), 20, 'r');
 SM_hypos = logical(S_hypos);
 Mat = [S_gre(SM_hypos) S_t1w(SM_hypos)];
 scatter(Mat(:, 1), Mat(:, 2), 10, Col(2, :));
@@ -159,12 +157,21 @@ if SaveMaskFlag
                 S_hypos_hypo, roi_nifti_sliceno(Roi, []));
 	save_series(RoiFile, fullfile(Subject, 'T2swHypoT1whyper_mask'), ...
                 S_hypos_hyper, roi_nifti_sliceno(Roi, []));
+    S_tmp = S_hypos;
+    S_tmp(logical(S_hypos_hypo)) = 0;
+    S_tmp(logical(S_hypos_hyper)) = 0;
+	save_series(RoiFile, fullfile(Subject, 'T2swHypoT1wiso_mask'), ...
+                S_tmp, roi_nifti_sliceno(Roi, []));
     % Save non tissue mask
     save_series(RoiFile, fullfile(Subject, 'NonTis_mask'), ...
                 S_nontis, roi_nifti_sliceno(Roi, []));
     % Save norm tissue mask
     save_series(RoiFile, fullfile(Subject, 'NormTis_mask'), ...
                 S_ntis, roi_nifti_sliceno(Roi, []));
+    % Save delta delta R2 dash map
+    ddR2d = get_ddR2smap(S_gre, 15e-3, S_t1w, 102.96e-3, S_roi, I_ntis_means_list);
+    save_series(RoiFile, fullfile(Subject, 'ddR2d_map'), ...
+                single(ddR2d), roi_nifti_sliceno(Roi, []));
 end
 
 % Validate
