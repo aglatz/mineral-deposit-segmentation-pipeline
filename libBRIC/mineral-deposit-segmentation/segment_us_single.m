@@ -128,6 +128,8 @@ for idx_iter = 1:N_iter
 end
 
 % CC Filtering
+S_hypos = cc_filter(S_gre, S_t1w, S_roi, ...
+    logical(S_hypos), logical(S_ntis), [], [I_thr{:}]');
 [S_hypos, S_hypos_hypo, S_hypos_hyper] = cc_filter(S_gre, S_t1w, S_roi, ...
     logical(S_hypos), logical(S_ntis), IntvarP, [I_thr{:}]');
 
@@ -168,10 +170,10 @@ if SaveMaskFlag
     % Save norm tissue mask
     save_series(RoiFile, fullfile(Subject, 'NormTis_mask'), ...
                 S_ntis, roi_nifti_sliceno(Roi, []));
-    % Save delta delta R2 dash map
-    ddR2d = get_ddR2smap(S_gre, 15e-3, S_t1w, 102.96e-3, S_roi, I_ntis_means_list);
-    save_series(RoiFile, fullfile(Subject, 'ddR2d_map'), ...
-                single(ddR2d), roi_nifti_sliceno(Roi, []));
+%     % Save delta delta R2 dash map
+%     ddR2d = get_ddR2smap(S_gre, 15e-3, S_t1w, 102.96e-3, S_roi, I_ntis_means_list);
+%     save_series(RoiFile, fullfile(Subject, 'ddR2d_map'), ...
+%                 single(ddR2d), roi_nifti_sliceno(Roi, []));
 end
 
 % Validate
