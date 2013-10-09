@@ -34,8 +34,8 @@ else
         otherwise
             if ~sum(size(S_orig_data) - [length(X_old) length(Y_old) length(Z_old)])
                 % prepare grids
-                [Xo, Yo, Zo] = meshgrid(X_old, Y_old, Z_old_slices);
-                [Xn, Yn, Zn] = meshgrid(X_new, Y_new, Z_new_slices);
+                [Xo, Yo, Zo] = meshgrid(Y_old, X_old, Z_old_slices);
+                [Xn, Yn, Zn] = meshgrid(Y_new, X_new, Z_new_slices);
                 % prepare original data
                 if size(S_orig_data, 3) == length(Z_old_slices)
                     S_tmp = double(S_orig_data);
