@@ -141,12 +141,22 @@ do
 
 	# Create target dir
 	TPATHFULL="${TPATH}/${RELDIR}"
-	echo "ssh -p$TPORT $THOST mkdir -p $TPATHFULL"
-	ssh -p$TPORT $THOST "mkdir -p $TPATHFULL" || exit 1
+	if [ "$THOST" != "localhost" -a "$THOST" != "127.0.0.1" ]
+	then
+		TMP1="ssh -p$TPORT $THOST"
+		TMP2="scp -P$TPORT"
+		TMP3="$THOST:"
+	else
+		TMP1=
+		TMP2="cp"
+		TMP3=
+	fi
+	echo "$TMP1 mkdir -p $TPATHFULL"
+	eval "$TMP1 mkdir -p $TPATHFULL" || exit 1
 
 	# Copy
-	echo "scp -P$TPORT $TOCOPY $THOST:$TPATHFULL" 
-	scp -P$TPORT $TOCOPY $THOST:$TPATHFULL || exit 1
+	echo "$TMP2 $TOCOPY ${TMP3}$TPATHFULL" 
+	eval "$TMP2 $TOCOPY ${TMP3}$TPATHFULL" || exit 1
 done
 
 exit 0
