@@ -1,6 +1,6 @@
 function [CC, SM, slices, L] = conncomp_stats(path, name_con, use_lab, ...
                                               name_roi, use_roi, use_iso, ...
-                                              name_weight)
+                                              name_weight, name_hypo, name_hyper)
 % Identifies the connected components of the input mask and 
 % returns stats for each connected component in a structure list 'CC'.
 % Inputs: path - the subject path
@@ -78,10 +78,12 @@ if get_volume(logical(L), F) ~= get_volume(logical(L_iso), F_iso)
     error('Unequal voxel size!');
 end
 
-% Get Location labels and weights
+% Get Location labels, weights, ...
 S_roi = load_series(fullfile(path, name_roi), slices);
 S_weight = load_series(fullfile(path, name_weight), slices);
+SM_hypo = logical(load_series(fullfile(path, name_hypo), slices));
+SM_hyper = logical(load_series(fullfile(path, name_hyper), slices));
 
 % Get CC stats
-CC = conncomp_list(L, L_iso, S_roi, S_weight, F);
+CC = conncomp_list(L, L_iso, S_roi, S_weight, F, SM_hypo, SM_hyper);
 

@@ -6,25 +6,17 @@ addpath('NIFTI/');
 
 close all; clear all; clc;
 
-sub_file = 'subjects_80_all.csv'; % csv file
-mat_name = 'subjects_80_all.mat'; % matlab file for saving results
-fe_name = 'FE_roi_mask'; % name of fe mask subject directory
+sub_file = 'subjects_98.csv'; % csv file
+mat_name = 'subjects_98_cs.mat'; % matlab file for saving results
+t2swhypo_name = 'T2swHypo_mask'; % name of T2*w hypointensity mask subject directory
+t2swhypot1whypo_name = 'T2swHypoT1whypo_mask';
+t2swhypot1whyper_name = 'T2swHypoT1whyper_mask';
 roi_name = 'RO_mask'; % name of ROI mask in subject directory
 gre_name = 'GRE_brain_restore'; % name of GRE volume
 icv_name = 'GRE_brain_mask'; % name of ICV mask
 
 % Read subject file
-fd = fopen(sub_file);
-if fd < 0
-    error('create_subjectdata:fileopenerror', 'Could not open file!');
-end
-Subjects = textscan(fd, '%s%s%s%s%s%s%s%s%s%*[^\n]', ...
-                       'delimiter',',',...
-                       'treatAsEmpty',{'NA','na'}, ...
-                       'commentStyle', '#');
-fclose(fd);
-Subjects = Subjects{9}; % contains path to subject directories
-N_total = length(Subjects);
+[Subjects, N_total] = get_subject_dirs(sub_file);
 
 % Init result structure
 Ret = struct;
@@ -34,7 +26,7 @@ for i=1:N_total
     Ret(ret_idx).Path = path;
     fprintf('Reading subject data for subject %s...', path);
     
-    S_fe = load_series(fullfile(path, fe_name), []);
+    S_fe = load_series(fullfile(path, t2swhypo_name), []);
     N_fe = sum(logical(S_fe(:)));
     fprintf('%d voxels...', N_fe);
     
@@ -42,7 +34,8 @@ for i=1:N_total
     if N_fe > 0
         % Get connected component statistics
         [Ret(ret_idx).CC] = ...
-            conncomp_stats(path, fe_name, 0, roi_name, 1, 1, gre_name);
+            conncomp_stats(path, t2swhypo_name, 0, roi_name, 1, 1, ...
+                           gre_name, t2swhypot1whypo_name, t2swhypot1whyper_name);
 
         % Labels of ROI mask
         S_roi = load_series(fullfile(path, roi_name), []);
@@ -50,7 +43,7 @@ for i=1:N_total
         Ret(ret_idx).Lab_roi = Lab_roi(2:end); % creates list of roi labels
         
         % Labels of ID mask
-        S_fe = load_series(fullfile(path, fe_name), []);
+        S_fe = load_series(fullfile(path, t2swhypo_name), []);
         Ret(ret_idx).Lab = S_fe(logical(S_fe))'; % creates a line vector
         
         % ICV
@@ -150,18 +143,20 @@ Field{1} = 'vol';
 Field{2} = 'ma';
 Field{3} = 'com';
 Field{4} = 'ra';
+Field{5} = 'phypo';
+Field{6} = 'phyper';
 CC_Type = cell(3, 1);
 CC_Type{1} = '';
 CC_Type{2} = 'inter';
 CC_Type{3} = 'intra';
 for idx = 1:length(CC_Type)
     [ResMat, N_res] = get_cc_avg_stats_all({Ret.CC}, Loc, Q, Field, CC_Type{idx});
-    fprintf(['-- CC ' CC_Type{idx} ' stats (vol, max. area, compactness, rel. anisotropy --\n']);
+    fprintf(['-- CC ' CC_Type{idx} ' stats (vol, ma, com, ra, phypo, phyper) --\n']);
     N_res'
-    fprintf('C, P, I'); reshape(ResMat(:, 1, :), 4, 3)
+    fprintf('C, P, I'); reshape(ResMat(:, 1, :), 6, 3)
     fprintf('------------------------------------------------------------\n');
-    fprintf('G'); reshape(ResMat(:, 2, :), 4, 3)
+    fprintf('G'); reshape(ResMat(:, 2, :), 6, 3)
     fprintf('------------------------------------------------------------\n');
-    fprintf('All'); reshape(ResMat(:, end, :), 4, 3)
+    fprintf('All'); reshape(ResMat(:, end, :), 6, 3)
     fprintf('============================================================\n');
 end

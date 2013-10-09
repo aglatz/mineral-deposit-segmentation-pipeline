@@ -1,4 +1,4 @@
-function [S] = interp_series(fname, S_orig_data, slices, method, F)
+function [S] = interp_series(S_orig_data, slices, method, F_old, F_new)
 % Interpolates 3D volume to the given voxel size.
 % Inputs: fname - input volume file corresponding to intput data for
 %                 obtaining the voxel size
@@ -8,7 +8,7 @@ function [S] = interp_series(fname, S_orig_data, slices, method, F)
 %         F - Interpolation factor (1 - no interpolation, >1 upsampling, ...)
 % Output: Interpolated 3D volume
 %
-if F == 1
+if ~sum(F_old - F_new)
     S = S_orig_data;
 else
     S_orig_type = class(S_orig_data);
@@ -16,7 +16,7 @@ else
         slices = 1:size(S_orig_data, 3);
     end
 
-    [X_old, Y_old, Z_old, X_new, Y_new, Z_new] = get_gridcoords(fname, F);
+    [X_old, Y_old, Z_old, X_new, Y_new, Z_new] = get_gridcoords(S_orig_data, F_old, F_new);
     Z_old_slices = Z_old(slices);
     M_z_new_slices = Z_new >= min(Z_old_slices) & Z_new <= max(Z_old_slices);
     Z_new_slices = Z_new(M_z_new_slices);

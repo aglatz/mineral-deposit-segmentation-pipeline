@@ -1,4 +1,4 @@
-function [CC] = conncomp_list(L, L_iso, S_roi, S_weight, F, SM_hypo)
+function [CC] = conncomp_list(L, L_iso, S_roi, S_weight, F, SM_hypo, SM_hyper)
 % Calulates statistics of each connected component.
 % INPUTS: L - connected components as returned by conncomp_init()
 %         L_iso - Same as L but with isotropic voxels for
@@ -7,6 +7,7 @@ function [CC] = conncomp_list(L, L_iso, S_roi, S_weight, F, SM_hypo)
 %         S_weight - Weight mask (same size as L)
 %         F - Vector that specifies the voxel size
 %         SM_hypo - Mask selecting voxels that appear hypointense on T1w volumes
+%         SM_hyper - Mask selecting voxels that appear hyperintense on T1w volumes
 % OUTPUT: CC - List of structures where each structure contains
 %              the label, volume, compactness, location, relative
 %              anisotropy, maximal in-plane area, number of slices
@@ -36,7 +37,8 @@ for lab_idx = 1:N_lab
                          'ma', get_max_area(SM, F), ...
                          'nsl', get_nslices(SM), ...
                          'intvar', get_intvar_slice(SM, S_weight), ...
-                         'phypo', get_phypo(SM, SM_hypo))
+                         'phypo', get_phypo(SM, SM_hypo), ...
+                         'phyper', get_phyper(SM, SM_hyper))
         if idx == 1
             CC = CC_tmp;
         else
@@ -51,6 +53,12 @@ end
 function [phypo] = get_phypo(SM, SM_hypo)
 SM_tmp = SM & SM_hypo;
 phypo = sum(SM_tmp(:))/sum(SM(:));
+
+
+%-------------------------------------------------------------------------
+function [phyper] = get_phyper(SM, SM_hyper)
+SM_tmp = SM & SM_hyper;
+phyper = sum(SM_tmp(:))/sum(SM(:));
 
 
 %-------------------------------------------------------------------------
