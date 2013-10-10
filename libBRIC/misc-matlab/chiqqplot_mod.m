@@ -32,16 +32,16 @@ for i=1:n
     g = (x(i)^(-1+df/2)) / (exp(x(i)/2)*gamma(df/2)*(sqrt(2)^df));
     se(i) = (scale/g)*sqrt(p*(1-p)/n);
 end
-x=sqrt(x).^2;
-se=sqrt(se).^2;
-y=sort(y).^2;
+x=sqrt(x);
+se=sqrt(se);
+y=sort(y);
 plot(x, x, 'k');
 hold on;
 plot(x, x - 1.95*se, '--k', x, x + 1.95*se, '--k');
 plot(x, y, 'm');
-xlabel('\bf SQ chi-squared distribution');
+xlabel('\bf Square root of the quantiles of the chi-squared distribution');
 % if strcmp(class,'MCDCOV')
-ylabel('\bf SQ Robust distances');
+	ylabel('\bf Square root of the robust distances');
 % elseif strcmp(class,'COV')
 %    ylabel('\bf Mahalanobis distance');
 % else

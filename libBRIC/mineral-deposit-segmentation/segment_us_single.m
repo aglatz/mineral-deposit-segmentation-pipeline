@@ -68,7 +68,7 @@ for idx_vain = 1:N_vain
 end
 
 % Delete previous version of report file
-% Subject = '/media/LP3TBdisk/Andreas_PhD/mineral-deposit-segmentation-pipeline/BRICpipe/asps382';
+% Subject = '~/tmp/mineral/1/13449';
 if ~isempty(ReportName)
     ReportFile = fullfile(Subject, ReportName);
     save_ps_figure(ReportFile, []); % Deletes previous file
@@ -77,17 +77,17 @@ else
 end
 
 % Read ROI
-RoiName = 'RO_weinew_mask';
+RoiName = 'RO_mask';
 RoiFile = fullfile(Subject, RoiName);
 S_roi = load_series(RoiFile, []);
 Roi = roi_init(S_roi);
 S_roi = load_series(RoiFile, roi_nifti_sliceno(Roi, []));
 
 % Pool signal intensities from corresponding left and right hemisphere structures
-% S_roi(S_roi == 50) = 11;
-% S_roi(S_roi == 51) = 12;
-% S_roi(S_roi == 52) = 13;
-% S_roi(S_roi == 55) = 14;
+S_roi(S_roi == 50) = 11;
+S_roi(S_roi == 51) = 12;
+S_roi(S_roi == 52) = 13;
+S_roi(S_roi == 55) = 14;
 
 % Read Reference
 try
@@ -98,9 +98,8 @@ catch
 end
 
 % Read T2sw/T1w volumes
-T2swName = 'GRE_restore';
+T2swName = 'GRE_brain_restore';
 S_gre = double(load_series(fullfile(Subject, T2swName), roi_nifti_sliceno(Roi, [])));
-S_gre = S_gre(:, :, :, 3);
 T1wName = 'T2W_brain_restore';
 S_t1w = double(load_series(fullfile(Subject, T1wName), roi_nifti_sliceno(Roi, [])));
 
@@ -128,34 +127,11 @@ for idx_iter = 1:N_iter
     Fit{idx_iter} = Ret.Fit;
 end
 
-NII = load_series(RoiFile, 0);
-F = NII.hdr.dime.pixdim(2:4);
-L = conncomp_init(logical(S_hypos), 3);
-L_iso = interp_series(L, [], 'nearest', F, [min(F) min(F) min(F)]);
-CC_s = conncomp_list(L, L_iso, S_roi, S_gre, F, logical(S_hypos), logical(S_hypos));
-% CC = struct2cell(CC_s);
-% CC = reshape(CC, size(CC, 1), size(CC, 3))';
-% save_xls(fullfile(Subject, 'NonTis_lab_mask'), {'%d', '%0.2f', '%0.2f', '%d', '%0.2f', '%0.2f', '%d', '%0.2f', '%0.2f'}, CC);  
-com = [CC_s.com];
-ra =[CC_s.ra];
-loc = [CC_s.loc];
-diff = ra-com;
-M = diff > 0 & loc == 11;
-lab = [CC_s.lab];
-labs = lab(M);
-SM_hypos = logical(S_hypos);
-for hu = 1:sum(M)
-    SM_hypos = SM_hypos & ~(L == labs(hu));
-end
-
-I_thr = [I_thr{:}]';
-SM_hypos(SM_hypos) = S_gre(SM_hypos) < I_thr(1, 1);
-
 % CC Filtering
 S_hypos = cc_filter(S_gre, S_t1w, S_roi, ...
-    SM_hypos, logical(S_ntis), [], I_thr);
+    logical(S_hypos), logical(S_ntis), [], [I_thr{:}]');
 [S_hypos, S_hypos_hypo, S_hypos_hyper] = cc_filter(S_gre, S_t1w, S_roi, ...
-    logical(S_hypos), logical(S_ntis), IntvarP, I_thr);
+    logical(S_hypos), logical(S_ntis), IntvarP, [I_thr{:}]');
 
 % Summary plot
 H = figure; %create_ps_figure;
@@ -191,8 +167,6 @@ if SaveMaskFlag
     % Save non tissue mask
     save_series(RoiFile, fullfile(Subject, 'NonTis_mask'), ...
                 S_nontis, roi_nifti_sliceno(Roi, []));
-	save_series(RoiFile, fullfile(Subject, 'NonTis_lab_mask'), ...
-                L, roi_nifti_sliceno(Roi, [])); 
     % Save norm tissue mask
     save_series(RoiFile, fullfile(Subject, 'NormTis_mask'), ...
                 S_ntis, roi_nifti_sliceno(Roi, []));
@@ -203,6 +177,8 @@ if SaveMaskFlag
 end
 
 % Validate
+NII = load_series(RoiFile, 0);
+F = NII.hdr.dime.pixdim(2:4);
 if ~isempty(S_ref)
     Ret = validate_raw(S_hypos, S_ref, [], F);
 else
@@ -223,4 +199,3 @@ Ret.Input.IntvarP = IntvarP;
 Ret.I_thr = I_thr;
 Ret.I_ntis_means = I_ntis_means;
 Ret.Fit = Fit;
-Ret.CC = CC_s;

@@ -64,9 +64,7 @@ L_T1W_BRAIN_RESTORE_VOL = $(L_T1W_BRAIN_RESTORE)$(FSL_EXT_VOL)
 L_T1W_NOTREG = $(L_T1W)_notreg
 # Unmodified (unregistered) T1W volume
 L_T1W_NOTREG_VOL = $(L_T1W_NOTREG)$(FSL_EXT_VOL)
-L_T1W_NOTREG_TRUNC_VOL = $(L_T1W_NOTREG)_trunc$(FSL_EXT_VOL)
 L_T1W_NOTREG_MAT = $(L_T1W_NOTREG)$(FSL_EXT_MAT)
-L_T1W_NOTREG_NOISE_MASK = $(L_T1W_NOTREG)_noise_mask$(FSL_EXT_VOL)
 # Template for unregistered, brain-extracted T1W (1st try)
 L_T1W_NOTREG_BRAIN1 = $(L_T1W_NOTREG)_brain1
 # Brain mask of unregistered, brain-extracted T1W (1st try)
@@ -95,7 +93,6 @@ L_T1W_NOTREG_BRAIN_RESTORE_MAT = $(L_T1W_NOTREG_BRAIN_RESTORE)$(FSL_EXT_MAT)
 L_T1W_NOTREG_BRAIN_RESTORE_INV_MAT = $(L_T1W_NOTREG_BRAIN_RESTORE)_inv$(FSL_EXT_MAT)
 L_T1W_NOTREG_BRAIN_RESTORE_TOFLAIR_MAT = $(L_T1W_NOTREG_BRAIN_RESTORE)_toflair$(FSL_EXT_MAT)
 L_T1W_NOTREG_BRAIN_RESTORE_TOT2W_MAT = $(L_T1W_NOTREG_BRAIN_RESTORE)_tot2w$(FSL_EXT_MAT)
-L_T1W_NOTREG_BRAIN_RESTORE_SUSAN_VOL = $(L_T1W_NOTREG_BRAIN_RESTORE)_susan$(FSL_EXT_VOL)
 
 # Template for registered FLAIR volume
 L_FLAIR = FLAIR
@@ -190,12 +187,11 @@ L_GRE_VOL = $(L_GRE)$(FSL_EXT_VOL)
 # Template for brain-extracted GRE
 L_GRE_BRAIN = $(L_GRE)_brain
 # Brain-extracted GRE
-#L_GRE_BRAIN_BET_VOL = $(L_GRE_BRAIN)_bet$(FSL_EXT_VOL)
+L_GRE_BRAIN_BET_VOL = $(L_GRE_BRAIN)_bet$(FSL_EXT_VOL)
 L_GRE_BRAIN_VOL = $(L_GRE_BRAIN)$(FSL_EXT_VOL)
 # Brain mask of brain-extracted GRE
 L_GRE_BRAIN_BET_MASK = $(L_GRE_BRAIN)_bet_mask$(FSL_EXT_VOL)
 L_GRE_BRAIN_MASK = $(L_GRE_BRAIN)_mask$(FSL_EXT_VOL)
-L_GRE_BRAIN_MASK1 = $(L_GRE_BRAIN)_mask1$(FSL_EXT_VOL)
 # Template for brain-extracted, bias-corrected GRE
 L_GRE_BRAIN_RESTORE = $(L_GRE_BRAIN)_restore
 # Brain-extracted, bias-corrected GRE
@@ -215,18 +211,16 @@ L_AR_ROI_MASK = AR_roi_mask$(FSL_EXT_VOL)
 # Basal ganglia mask from registered T1W volume
 L_BG_MASK = BG_mask$(FSL_EXT_VOL)
 L_BG_NOTREG_MASK = BG_notreg_mask$(FSL_EXT_VOL)
-L_BG_NOTREG_MAT = BG_notreg$(FSL_EXT_MAT)
-L_BG_NOTREG_MNI_VOL = $(FSL_PFX)/data/standard/MNI152_T1_1mm_brain$(FSL_EXT_VOL)
 L_RO_MASK = RO_mask$(FSL_EXT_VOL)
 
 # Reference masks
 L_FE_REF_MASK = FE_ref_mask$(FSL_EXT_VOL)
 L_FE_REF_NOTREG_MASK = FE_ref_notreg_mask$(FSL_EXT_VOL)
-L_FE_ROI = T2swHypoT1wiso
-L_FE_ROI_MASK = $(L_FE_ROI)_mask$(FSL_EXT_VOL)
-L_FE_ROI_BIN_MASK = $(L_FE_ROI)_bin_mask$(FSL_EXT_VOL)
-L_FE_ROI_BIN_NOTREG_MASK = $(L_FE_ROI)_bin_notreg_mask$(FSL_EXT_VOL)
-L_FE_ROI_BIN_NOTREG_MNI_MASK = $(L_FE_ROI)_bin_notreg_mni_mask$(FSL_EXT_VOL)
+L_FE_ROI_MASK = FE_roi_mask$(FSL_EXT_VOL)
+L_FE_ROI_ERO_MASK = FE_roi_ero_mask$(FSL_EXT_VOL)
+L_FE_ROI_NOTREG_MASK = FE_roi_notreg_mask$(FSL_EXT_VOL)
+L_FE_ROI_BIN_MASK = Oli_mask$(FSL_EXT_VOL)
+L_FE_ROI_BIN_NOTREG_MASK = FE_roi_bin_notreg_mask$(FSL_EXT_VOL)
 L_IC_REF_MASK = IC_ref_mask$(FSL_EXT_VOL)
 L_WM_REF_MASK = WM_ref_mask$(FSL_EXT_VOL)
 
@@ -240,14 +234,6 @@ L_FEM_RSYNC = FE_mask$(EXT_RSYNC)
 L_RIM_RSYNC = REF_ICV_mask$(EXT_RSYNC)
 L_RWM_RSYNC = REF_WM_mask$(EXT_RSYNC)
 
-# MNI registration
-L_T1W_MNI_REF_VOL = ../asps057/T1W_notreg_trunc_mni2mm.nii.gz
-L_T1W_BRAIN_MNI_REF_VOL = ../asps057/T1W_notreg_brain_restore_mni2mm.nii.gz
-L_T1W_MNI_REF_FNIRT_CFG = ../node_scripts/T1_2_MNI152_2mm_ge65.cnf
-L_T1W_NOTREG_TRUNC_MNI = $(L_T1W_NOTREG)_trunc_mni
-L_T1W_NOTREG_TRUNC_MNI_VOL = $(L_T1W_NOTREG_TRUNC_MNI)$(FSL_EXT_VOL)
-L_T1W_NOTREG_TRUNC_MNI_WARP = $(L_T1W_NOTREG_TRUNC_MNI)_warp$(FSL_EXT_VOL)
-L_T1W_NOTREG_TRUNC_MNI_MAT = $(L_T1W_NOTREG_TRUNC_MNI)$(FSL_EXT_MAT)
 
 # Copy and convert remote files rules #########################################
 .PHONY: all
@@ -255,9 +241,8 @@ all:	$(L_T1W_BRAIN_RESTORE_VOL) $(L_RO_MASK) \
 		$(L_GRE_BRAIN_RESTORE_VOL) $(L_WM_MASK) $(L_GM_MASK) \
 		$(L_CS_MASK) $(L_AR_MASK) $(L_AR_ROI_MASK) \
 		$(L_FE_REF_MASK) $(L_FE_ROI_MASK) \
-		$(INPUT_CSV) $(OUTPUT_CSV) \
-		$(L_T2W_BRAIN_RESTORE_VOL) \
-		$(L_T1W_NOTREG_TRUNC_MNI_VOL) $(L_FE_ROI_BIN_NOTREG_MNI_MASK)
+		$(INPUT_CSV) $(L_FLAIR_BRAIN_RESTORE_VOL) \
+		$(L_T2W_BRAIN_RESTORE_VOL) $(OUTPUT_CSV)
 	@OUT_FILES=`echo "$+" | sed s+$(INPUT_CSV)++g | sed s+$(OUTPUT_CSV)++g`; \
 	 DST_PATH=`cat $(OUTPUT_CSV)`; \
 	 $(copy_result)
@@ -456,7 +441,7 @@ $(L_GRE_BRAIN_BET_MASK): $(L_GRE_VOL)
 	 $(brain_mask)
 	@$(check_target)
 
-$(L_GRE_BRAIN_MASK1): $(L_GRE_BRAIN_BET_MASK) $(L_IC_REF_MASK)
+$(L_GRE_BRAIN_MASK): $(L_GRE_BRAIN_BET_MASK) $(L_IC_REF_MASK)
 	@VOL=`$(SCRIPT_DIR)check_empty.sh $(FSL_BIN_PFX) $(L_IC_REF_MASK)`; \
 	 if [ $$? -eq 0 -a $$VOL -gt 0 ]; \
 	 then \
@@ -466,85 +451,67 @@ $(L_GRE_BRAIN_MASK1): $(L_GRE_BRAIN_BET_MASK) $(L_IC_REF_MASK)
 	 fi;
 	@$(check_target)
 
-#$(L_GRE_BRAIN_BET_VOL): $(L_GRE_VOL) $(L_GRE_BRAIN_BET_MASK)
-#	@$(extract_brain)
-#	@$(check_target)
-
-$(L_GRE_BRAIN_VOL): $(L_GRE_VOL) $(L_GRE_BRAIN_MASK1)
+$(L_GRE_BRAIN_BET_VOL): $(L_GRE_VOL) $(L_GRE_BRAIN_BET_MASK)
 	@$(extract_brain)
-	@$(SCRIPT_DIR)exec_matlab.sh $(SCRIPT_DIR)prepareinput.mt $@ tmp_$@; \
-	 mv tmp_$@ $@;
 	@$(check_target)
 
-$(L_GRE_BRAIN_MASK): $(L_GRE_BRAIN_VOL)
-	@fslmaths $< -bin $@ -odt char;
+$(L_GRE_BRAIN_VOL): $(L_GRE_VOL) $(L_GRE_BRAIN_MASK)
+	@$(extract_brain)
 	@$(check_target)
 
-$(L_T1W_NOTREG_BRAIN_MASK): $(L_T1W_NOTREG_VOL)
+$(L_T1W_NOTREG_BRAIN1_MASK): $(L_T1W_NOTREG_VOL)
 	@BET_COEF=`$(SCRIPT_DIR)setup_environment.sh BET_T1W`; \
 	 $(brain_mask)
 	@$(check_target)
 
-$(L_FLAIR_NOTREG_BRAIN_MASK): $(L_FLAIR_NOTREG_VOL)
+$(L_FLAIR_NOTREG_BRAIN1_MASK): $(L_FLAIR_NOTREG_VOL)
 	@BET_COEF=`$(SCRIPT_DIR)setup_environment.sh BET_FLAIR`; \
 	 $(brain_mask)
 	@$(check_target)
 
-$(L_T2W_NOTREG_BRAIN_MASK): $(L_T2W_NOTREG_VOL)
+$(L_T2W_NOTREG_BRAIN1_MASK): $(L_T2W_NOTREG_VOL)
 	@BET_COEF=`$(SCRIPT_DIR)setup_environment.sh BET_T2W`; \
 	 $(brain_mask)
 	@$(check_target)
 
-$(L_T1W_NOTREG_BRAIN_VOL): $(L_T1W_NOTREG_VOL) $(L_T1W_NOTREG_BRAIN_MASK)
+$(L_T1W_NOTREG_BRAIN1_VOL): $(L_T1W_NOTREG_VOL) $(L_T1W_NOTREG_BRAIN1_MASK)
 	@$(extract_brain)
-	@$(SCRIPT_DIR)exec_matlab.sh $(SCRIPT_DIR)prepareinput.mt $@ tmp_$@; \
-	 mv tmp_$@ $@;
 	@$(check_target)	
 
-$(L_T1W_NOTREG_TRUNC_VOL): $(L_T1W_NOTREG_VOL) $(L_T1W_NOTREG_BRAIN_VOL)
-	@$(SCRIPT_DIR)exec_matlab.sh	$(SCRIPT_DIR)truncvol.mt $< \
-									tmp_$(L_T1W_NOTREG_BRAIN_VOL).txt \
-									$@
+$(L_FLAIR_NOTREG_BRAIN1_VOL): $(L_FLAIR_NOTREG_VOL) $(L_FLAIR_NOTREG_BRAIN1_MASK)
+	@$(extract_brain)
+	@$(check_target)
+
+$(L_T2W_NOTREG_BRAIN1_VOL): $(L_T2W_NOTREG_VOL) $(L_T2W_NOTREG_BRAIN1_MASK)
+	@$(extract_brain)
+	@$(check_target)
+
+$(L_T1W_NOTREG_BRAIN_MASK): $(L_GRE_BRAIN_MASK) $(L_T1W_NOTREG_BRAIN1_VOL) \
+							$(L_T1W_NOTREG_BRAIN1_INV_MAT)
+	@$(apply_transform_mask)
+	@$(check_target)
+
+$(L_FLAIR_NOTREG_BRAIN_MASK): $(L_GRE_BRAIN_MASK) $(L_FLAIR_NOTREG_BRAIN1_VOL) \
+							  $(L_FLAIR_NOTREG_BRAIN1_INV_MAT)
+	@$(apply_transform_mask)
+	@$(check_target)
+
+$(L_T2W_NOTREG_BRAIN_MASK): $(L_GRE_BRAIN_MASK) $(L_T2W_NOTREG_BRAIN1_VOL) \
+							$(L_T2W_NOTREG_BRAIN1_INV_MAT)
+	@$(apply_transform_mask)
+	@$(check_target)
+
+$(L_T1W_NOTREG_BRAIN_VOL): $(L_T1W_NOTREG_VOL) $(L_T1W_NOTREG_BRAIN_MASK)
+	@$(extract_brain)
 	@$(check_target)
 
 $(L_FLAIR_NOTREG_BRAIN_VOL): $(L_FLAIR_NOTREG_VOL) $(L_FLAIR_NOTREG_BRAIN_MASK)
 	@$(extract_brain)
-	@$(SCRIPT_DIR)exec_matlab.sh $(SCRIPT_DIR)prepareinput.mt $@ tmp_$@; \
-	 mv tmp_$@ $@;
 	@$(check_target)
 
 $(L_T2W_NOTREG_BRAIN_VOL): $(L_T2W_NOTREG_VOL) $(L_T2W_NOTREG_BRAIN_MASK)
 	@$(extract_brain)
-	@$(SCRIPT_DIR)exec_matlab.sh $(SCRIPT_DIR)prepareinput.mt $@ tmp_$@; \
-	 mv tmp_$@ $@;
 	@$(check_target)
-
-#$(L_T1W_NOTREG_BRAIN_MASK): $(L_GRE_BRAIN_MASK) $(L_T1W_NOTREG_BRAIN1_VOL) \
-#							$(L_T1W_NOTREG_BRAIN1_INV_MAT)
-#	@$(apply_transform_mask)
-#	@$(check_target)
-
-#$(L_FLAIR_NOTREG_BRAIN_MASK): $(L_GRE_BRAIN_MASK) $(L_FLAIR_NOTREG_BRAIN1_VOL) \
-#							  $(L_FLAIR_NOTREG_BRAIN1_INV_MAT)
-#	@$(apply_transform_mask)
-#	@$(check_target)
-
-#$(L_T2W_NOTREG_BRAIN_MASK): $(L_GRE_BRAIN_MASK) $(L_T2W_NOTREG_BRAIN1_VOL) \
-#							$(L_T2W_NOTREG_BRAIN1_INV_MAT)
-#	@$(apply_transform_mask)
-#	@$(check_target)
-
-#$(L_T1W_NOTREG_BRAIN_VOL): $(L_T1W_NOTREG_BRAIN1_VOL) $(L_T1W_NOTREG_BRAIN_MASK)
-#	@$(extract_brain)
-#	@$(check_target)
-
-#$(L_FLAIR_NOTREG_BRAIN_VOL): $(L_FLAIR_NOTREG_VOL) $(L_FLAIR_NOTREG_BRAIN_MASK)
-#	@$(extract_brain)
-#	@$(check_target)
-
-#$(L_T2W_NOTREG_BRAIN_VOL): $(L_T2W_NOTREG_VOL) $(L_T2W_NOTREG_BRAIN_MASK)
-#	@$(extract_brain)
-#	@$(check_target)
 
 $(L_T1W_BRAIN_VOL): $(L_T1W_VOL) $(L_GRE_BRAIN_MASK)
 	@$(extract_brain)
@@ -641,34 +608,31 @@ endef
 
 
 # Co-registering rules ########################################################
-#$(L_T1W_NOTREG_MAT): $(L_T1W_NOTREG_BRAIN1_VOL) $(L_GRE_BRAIN_VOL)
-#	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS1`; \
-#	 $(register)
-#	@$(check_target)
+$(L_T1W_NOTREG_MAT): $(L_T1W_NOTREG_VOL) $(L_GRE_VOL)
+	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS1`; \
+	 $(register)
+	@$(check_target)
 
-#$(L_T1W1_VOL):	$(L_T1W_NOTREG_BRAIN1_VOL) $(L_GRE_BRAIN_RESTORE_VOL) \
-#				$(L_T1W_NOTREG_BRAIN1_MAT)
-#	@FLIRT_COEF="-interp sinc"; \
-#	 $(apply_transform)
-#	@$(check_target)
+$(L_T1W1_VOL):	$(L_T1W_NOTREG_VOL) $(L_GRE_BRAIN_RESTORE_VOL) \
+				$(L_T1W_NOTREG_BRAIN1_MAT)
+	@FLIRT_COEF="-interp sinc"; \
+	 $(apply_transform)
+	@$(check_target)
 
 $(L_T1W_NOTREG_BRAIN1_MAT):	$(L_T1W_NOTREG_BRAIN1_VOL) $(L_GRE_BRAIN_VOL)
 	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS1`; \
-	 REF_COEF="-bin -kernel sphere 3 -ero"; \
 	 $(register)
 	@$(check_target)
 
 $(L_FLAIR_NOTREG_BRAIN1_MAT): $(L_T1W_NOTREG_BRAIN_VOL) \
 							  $(L_FLAIR_NOTREG_BRAIN1_VOL)
 	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS1`; \
-	 REF_COEF="-bin -kernel sphere 3 -ero"; \
 	 $(register)
 	@$(check_target)
 
 $(L_T2W_NOTREG_BRAIN1_MAT): $(L_T1W_NOTREG_BRAIN_VOL) \
 							$(L_T2W_NOTREG_BRAIN1_VOL)
 	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS1`; \
-	 REF_COEF="-bin -kernel sphere 3 -ero"; \
 	 $(register)
 	@$(check_target)
 
@@ -688,21 +652,18 @@ $(L_T2W_NOTREG_BRAIN1_INV_MAT): $(L_T2W_NOTREG_BRAIN1_MAT) \
 
 $(L_T1W_NOTREG_BRAIN_MAT):	$(L_T1W_NOTREG_BRAIN_VOL) $(L_GRE_BRAIN_VOL)
 	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS2`; \
-	 REF_COEF="-bin -kernel sphere 3 -ero"; \
 	 $(register)
 	@$(check_target)
 
 $(L_T1W_NOTREG_BRAIN_RESTORE_MAT): $(L_T1W_NOTREG_BRAIN_RESTORE_VOL) \
 								   $(L_GRE_BRAIN_RESTORE_VOL)
 	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS2`; \
-	 REF_COEF="-bin -kernel sphere 3 -ero"; \
 	 $(register)
 	@$(check_target)
 
 $(L_T1W_NOTREG_BRAIN_RESTORE_TOFLAIR_MAT): $(L_T1W_NOTREG_BRAIN_RESTORE_VOL) \
 										   $(L_FLAIR_NOTREG_BRAIN_RESTORE_VOL)
 	@FLIRT_COEF=`$(SCRIPT_DIR)setup_environment.sh FLIRT_PASS2`; \
-	 REF_COEF="-bin -kernel sphere 3 -ero"; \
 	 $(register)
 	@$(check_target)
 
@@ -712,27 +673,23 @@ $(L_FLAIR_NOTREG_BRAIN_RESTORE_MAT): $(L_T1W_NOTREG_BRAIN_RESTORE_MAT) \
 	@$(check_target)
 
 $(L_T2W_NOTREG_BRAIN_RESTORE_MAT): $(L_T2W_NOTREG_BRAIN_RESTORE_VOL) \
-								   $(L_T1W_NOTREG_BRAIN_RESTORE_VOL) \
-								   $(L_T1W_NOTREG_BRAIN_RESTORE_MAT)
-	@REF_COEF="-bin -kernel sphere 3 -ero"; \
-	 $(register)
-	@mv $@ tmp_$@; \
-	 convert_xfm -omat $@ -concat $(L_T1W_NOTREG_BRAIN_RESTORE_MAT) tmp_$@
+								   $(L_GRE_BRAIN_RESTORE_VOL)
+	@$(register)
 	@$(check_target)
 
-$(L_T1W_VOL): $(L_T1W_NOTREG_BRAIN_VOL) $(L_GRE_BRAIN_RESTORE_VOL) \
+$(L_T1W_VOL): $(L_T1W_NOTREG_VOL) $(L_GRE_BRAIN_RESTORE_VOL) \
 			  $(L_T1W_NOTREG_BRAIN_RESTORE_MAT)
 	@FLIRT_COEF="-interp sinc"; \
 	 $(apply_transform)
 	@$(check_target)
 
-$(L_FLAIR_VOL): $(L_FLAIR_NOTREG_BRAIN_VOL) $(L_GRE_BRAIN_RESTORE_VOL) \
+$(L_FLAIR_VOL): $(L_FLAIR_NOTREG_VOL) $(L_GRE_BRAIN_RESTORE_VOL) \
 			    $(L_FLAIR_NOTREG_BRAIN_RESTORE_MAT)
 	@FLIRT_COEF="-interp sinc"; \
 	 $(apply_transform)
 	@$(check_target)
 
-$(L_T2W_VOL): $(L_T2W_NOTREG_BRAIN_VOL) $(L_GRE_BRAIN_RESTORE_VOL) \
+$(L_T2W_VOL): $(L_T2W_NOTREG_VOL) $(L_GRE_BRAIN_RESTORE_VOL) \
 			  $(L_T2W_NOTREG_BRAIN_RESTORE_MAT)
 	@FLIRT_COEF="-interp sinc"; \
 	 $(apply_transform)
@@ -802,16 +759,8 @@ REF_STAT=$$?; \
 if [ $$IN_STAT -eq 0 -a $$REF_STAT -eq 0 -a \
 	 $$IN_VOL -gt 0 -a $$REF_VOL -gt 0 ]; \
 then \
-	echo -n "$(CUR_DIR)/$@: registering using flirt with $$FLIRT_COEF, $$REF_COEF..."; \
-	$(FSL_BIN_PFX)fslmaths $$IN -bin -kernel sphere 3 -ero -bin \
-							tmp_ero_in_mask -odt char; \
-	$(FSL_BIN_PFX)fslmaths $$REF $$REF_COEF -bin \
-							tmp_ero_ref_mask -odt char; \
-	$(FSL_BIN_PFX)flirt $$FLIRT_COEF \
-						-in $$IN -ref $$REF \
-						-inweight tmp_ero_in_mask -refweight tmp_ero_ref_mask \
-						-omat $@; \
-	rm -f tmp_ero_in_mask.* tmp_ero_ref_mask.*; \
+	echo -n "$(CUR_DIR)/$@: registering using flirt with $$FLIRT_COEF..."; \
+	$(FSL_BIN_PFX)flirt $$FLIRT_COEF -in $$IN -ref $$REF -omat $@; \
 	echo "done."; \
 else \
 	echo -n "$(CUR_DIR)/$@: Info: Input is blank. Creating unity matrix..."; \
@@ -829,45 +778,23 @@ endef
 
 
 # Basal ganglia mask rules ####################################################
-$(L_T1W_NOTREG_NOISE_MASK): $(L_T1W_NOTREG_VOL)
-	@$(SCRIPT_DIR)exec_matlab.sh $(SCRIPT_DIR)estnoise.mt $< 0.2 $@
-	@$(check_target)
-
-$(L_T1W_NOTREG_BRAIN_RESTORE_SUSAN_VOL): $(L_T1W_NOTREG_BRAIN_RESTORE_VOL) \
-										 $(L_T1W_NOTREG_NOISE_MASK)
-	@N=`cat $(L_T1W_NOTREG_NOISE_MASK).txt`; \
-	 $(FSL_BIN_PFX)susan $< $$((N*4)) 3 3 0 0 $@
-	@$(check_target)
-
-#	 $(FSL_BIN_PFX)fslmaths $< -bin -kernel sphere 3 -ero -bin tmp_$< -odt char; \
-#	 $(FSL_BIN_PFX)first_flirt $< $$OUT -b -inweight tmp_$< -strucweight $(SCRIPT_DIR)MNI_BG_mask; \
-
-$(L_BG_NOTREG_MAT): $(L_T1W_NOTREG_BRAIN_RESTORE_SUSAN_VOL)
-	@echo -n "$(CUR_DIR)/$@: first_flirt ..."; \
-	 OUT=`echo $@ | $(FSL_EXT_VOL_SED)`; \
-	 $(FSL_BIN_PFX)first_flirt $< $$OUT -b; \
-	 mv $${OUT}.mat $@; rm -f tmp_$<; \
-	 echo "done.";
-	@$(check_target)
-
-$(L_BG_NOTREG_MASK): $(L_T1W_NOTREG_BRAIN_RESTORE_VOL) $(L_BG_NOTREG_MAT)
+$(L_BG_NOTREG_MASK): $(L_T1W_NOTREG_BRAIN_VOL)
 	@$(run_first)
 	@$(check_target)
 
-$(L_BG_MASK): $(L_BG_NOTREG_MASK) $(L_GRE_BRAIN_VOL) $(L_T1W_NOTREG_BRAIN_RESTORE_MAT)
+$(L_BG_MASK): $(L_BG_NOTREG_MASK) $(L_GRE_VOL) $(L_T1W_NOTREG_BRAIN_RESTORE_MAT)
 	@FLIRT_COEF="-interp nearestneighbour"; \
 	 $(apply_transform)
 	@$(check_target)
 
 define run_first
 IN=`echo $< | $(FSL_EXT_VOL_SED)`; \
-MAT=`echo $+ | cut -d ' ' -f 2`; \
 OUT=$${IN}_first; \
-FIRST_COEF="-s L_Thal,L_Caud,L_Puta,L_Pall,R_Thal,R_Caud,R_Puta,R_Pall"; \
+FIRST_COEF="-s BrStem,L_Thal,L_Caud,L_Puta,L_Pall,R_Thal,R_Caud,R_Puta,R_Pall";\
+rm -rf $${OUT}*; \
 echo -n "$(CUR_DIR)/$@: fitting model using first with $$FIRST_COEF..."; \
-$(FSL_BIN_PFX)run_first_all -a $$MAT -b $$FIRST_COEF -m none -i $${IN} -o $$OUT; \
+$(FSL_BIN_PFX)run_first_all $$FIRST_COEF -i $$IN -o $$OUT -b; \
 mv $${OUT}_all_none_firstseg$(FSL_EXT_VOL) $@; \
-rm -rf $${OUT}* tmp_$${IN}; \
 echo "done."
 endef
 
@@ -896,7 +823,7 @@ $(L_SE_HARD_MASK): $(L_SE_MASK)
 	@cp tmp_$< $@;
 	@$(check_target)
 
-$(L_SE_HARD_LORD): $(L_T1W_BRAIN_RESTORE_VOL) $(L_SE_HARD_MASK)
+$(L_SE_HARD_LORD): $(L_GRE_BRAIN_RESTORE_VOL) $(L_SE_HARD_MASK)
 	@echo -n "$(CUR_DIR)/$@: determine label order..."; \
 	 GRE=`echo "$+" | cut -d ' ' -f 1`; \
 	 MASK=`echo "$+" | cut -d ' ' -f 2`; \
@@ -972,16 +899,19 @@ $(SCRIPT_DIR)exec_matlab.sh $(SCRIPT_DIR)mask2maskroi.mt $$MASK $$DIM $$ROI $$WE
 echo "done.";
 endef
 
+
+# Iron mask rules ##############################################################
 $(L_T1W_NOTREG_BRAIN_RESTORE_INV_MAT):	$(L_T1W_NOTREG_BRAIN_RESTORE_MAT)
 	@$(invert_matrix)
 	@$(check_target)
 
-$(L_FE_ROI_BIN_MASK): $(L_FE_ROI_MASK)
-	@$(FSL_BIN_PFX)fslmaths $< -bin $@ -odt char
+$(L_FE_ROI_NOTREG_MASK): $(L_FE_ROI_MASK) $(L_T1W_NOTREG_BRAIN_VOL) \
+						 $(L_T1W_NOTREG_BRAIN_RESTORE_INV_MAT)
+	@THR=30;$(apply_transform_mask)
 	@$(check_target)
 
-$(L_FE_ROI_BIN_NOTREG_MASK):	$(L_FE_ROI_BIN_MASK) $(L_T1W_NOTREG_BRAIN_VOL) \
-								$(L_T1W_NOTREG_BRAIN_RESTORE_INV_MAT)
+$(L_FE_ROI_BIN_NOTREG_MASK): $(L_FE_ROI_BIN_MASK) $(L_T1W_NOTREG_BRAIN_VOL) \
+							 $(L_T1W_NOTREG_BRAIN_RESTORE_INV_MAT)
 	@THR=30;$(apply_transform_mask)
 	@$(check_target)
 
@@ -989,62 +919,6 @@ $(L_FE_REF_NOTREG_MASK): $(L_FE_REF_MASK) $(L_T1W_NOTREG_BRAIN_VOL) \
 						 $(L_T1W_NOTREG_BRAIN_RESTORE_INV_MAT)
 	@THR=30;$(apply_transform_mask)
 	@$(check_target)
-
-
-# Nonlinear registration rules ################################################
-$(L_T1W_NOTREG_TRUNC_MNI_MAT):	$(L_T1W_NOTREG_BRAIN_RESTORE_VOL) \
-								$(L_T1W_BRAIN_MNI_REF_VOL)
-	@REF_COEF="-bin -kernel sphere 3 -ero"; \
-	 $(register)
-	@$(check_target)
-
-$(L_T1W_NOTREG_TRUNC_MNI_WARP): $(L_T1W_NOTREG_TRUNC_VOL) \
-								$(L_T1W_NOTREG_TRUNC_MNI_MAT) \
-								$(L_T1W_MNI_REF_FNIRT_CFG)
-	@$(nregister)
-	@$(check_target)
-
-define nregister
-IN=`echo "$+" | cut -d ' ' -f 1 | $(FSL_EXT_VOL_SED)`; \
-AFF=`echo "$+" | cut -d ' ' -f 2`; \
-CFG=`echo "$+" | cut -d ' ' -f 3`; \
-echo -n "$(CUR_DIR)/$@: registering using fnirt with ..."; \
-$(FSL_BIN_PFX)fnirt --in=$$IN --aff=$$AFF --cout=$@ --config=$$CFG; \
-echo "done."
-endef
-
-$(L_T1W_NOTREG_TRUNC_MNI_VOL):	$(L_T1W_NOTREG_TRUNC_VOL) \
-								$(L_T1W_BRAIN_MNI_REF_VOL) \
-								$(L_T1W_NOTREG_TRUNC_MNI_WARP)
-	@$(apply_warp)
-	@$(check_target)
-
-$(L_FE_ROI_BIN_NOTREG_MNI_MASK):$(L_FE_ROI_BIN_NOTREG_MASK) \
-								$(L_T1W_BRAIN_MNI_REF_VOL) \
-								$(L_T1W_NOTREG_TRUNC_MNI_WARP)
-	@$(apply_warp_mask)
-	@$(check_target)
-
-define apply_warp
-IN=`echo "$+" | cut -d ' ' -f 1`; \
-REF=`echo "$+" | cut -d ' ' -f 2`; \
-VOL=`echo "$+" | cut -d ' ' -f 3`; \
-echo -n "$(CUR_DIR)/$@: applying warp using applywarp ..."; \
-$(FSL_BIN_PFX)applywarp --ref=$$REF --in=$$IN --warp=$$VOL --out=$@; \
-echo "done."
-endef
-
-define apply_warp_mask
-IN=`echo "$+" | cut -d ' ' -f 1`; \
-REF=`echo "$+" | cut -d ' ' -f 2`; \
-VOL=`echo "$+" | cut -d ' ' -f 3`; \
-echo -n "$(CUR_DIR)/$@: applying warp to mask using applywarp ..."; \
-$(FSL_BIN_PFX)fslmaths $$IN -bin -mul 100 tmp_$${IN}; \
-$(FSL_BIN_PFX)applywarp --ref=$$REF --in=tmp_$${IN} --warp=$$VOL --out=$@; \
-rm -f tmp_$${IN}; \
-$(FSL_BIN_PFX)fslmaths $@ -thr 60 -bin $@ -odt char; \
-echo "done."
-endef
 
 
 # Missing targets rules #######################################################
