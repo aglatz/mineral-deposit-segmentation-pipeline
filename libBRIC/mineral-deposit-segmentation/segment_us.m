@@ -137,15 +137,15 @@ for idx_lab = 1:N_lab
     Ret.S_ntis = Ret.S_ntis + cast(SM_ntis, class(Ret.S_ntis)) .* Lab(idx_lab);
     
     % Thresholding (Derive threshold from first ROI if not given)
-    if idx_lab == 1
+%     if idx_lab == 1
         [SM_hypos, I_thr] = ...
             thresh_filter(S_gre, S_t1w, SM_oli, I_ntis_means, C_ntis, ...
                           RDs, P_thr, []);
-    else
-        [SM_hypos, I_thr] = ...
-            thresh_filter(S_gre, S_t1w, SM_oli, I_ntis_means, C_ntis, ...
-                          RDs, P_thr, I_thr);      
-    end
+%     else
+%         [SM_hypos, I_thr] = ...
+%             thresh_filter(S_gre, S_t1w, SM_oli, Ret.I_ntis_means(idx_lab, :), C_ntis, ...
+%                           RDs, P_thr, I_thr);      
+%     end
     Ret.I_thr(idx_lab, :) = [I_thr, Lab(idx_lab)];
 
     % Save hypointensity masks
@@ -281,10 +281,7 @@ I_thr(4) = -sqrt(C_ntis(2,2)*RDs(2))+I_ntis_mean(2);
 I_thr(5) = +sqrt(C_ntis(2,2)*RDs(2))+I_ntis_mean(2);
 
 % Calculate delta delta R2 dash
-dR2s = -1/15e-3*log(I_thr(1)/I_ntis_mean(1));
-dR2 = -1/102.96e-3*log(I_thr(4)/I_ntis_mean(2));
-ddR2d = dR2s - dR2;
-fprintf('ddR2s=%0.3f...', ddR2d);
+fprintf('R2s=%0.3f(%0.3f)...', I_thr(1), I_ntis_mean(1));
 
 % Segment multifocal T2*w hypointensities
 Mat = [S_gre(SM_oli) S_t1w(SM_oli)];

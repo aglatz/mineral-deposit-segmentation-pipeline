@@ -75,7 +75,7 @@ end
 
 % Consistency check
 if get_volume(logical(L), F) ~= get_volume(logical(L_iso), F_iso)
-    error('Unequal voxel size!');
+%	error('Unequal voxel size!');
 end
 
 % Get Location labels, weights, ...
