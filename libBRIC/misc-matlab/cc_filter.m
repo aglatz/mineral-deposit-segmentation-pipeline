@@ -32,7 +32,7 @@ for lab_idx = 1:N_lab
         lab_idx, Loc(lab_idx), phypo, phyper, intvar);
     if phypo < 0.5 && phyper < 0.5 && ~(phypo > 0.05 && phyper > 0.05) && res
         % Apply T1w threshold
-        SM_cc(SM_cc) = S_t1w(SM_cc) > I_thr(M, 4);
+        SM_cc(SM_cc) = S_t1w(SM_cc) > I_thr(M, 4) & S_t1w(SM_cc) < I_thr(M, 5);
         % all
         S_hypos = S_hypos + cast(SM_cc, class(S_hypos)) .* Loc(lab_idx);
         % hypo hypo
