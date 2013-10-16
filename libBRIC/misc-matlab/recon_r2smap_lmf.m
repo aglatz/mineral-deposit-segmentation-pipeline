@@ -23,7 +23,10 @@ S_r2slog = zeros(size(S_abs(:, :, :, 1)), 'uint8');
 if ~isempty(verbose) && verbose
     fprintf('Reconstructing r2s map...');
 end
-    
+
+T = double(T);
+N = double(N);
+
 for s = 1:size(S_abs, 3)
     if ~isempty(verbose) && verbose
         fprintf('%d...', s);
@@ -33,7 +36,7 @@ for s = 1:size(S_abs, 3)
     for j = 1:size(S_abs, 1)
         for m = 1:size(S_abs, 2)
             % Per-voxel time signal and noise
-            I = reshape(S_abs(j, m, s, :), size(S_abs, 4), 1);
+            I = double(reshape(S_abs(j, m, s, :), size(S_abs, 4), 1));
             
             % 3SD above noise is good to go...
             M = I > 3*N;
@@ -42,8 +45,8 @@ for s = 1:size(S_abs, 3)
                 P_linfit = polyfit(T(M), log(I(M)), 1);
                 S_r2slog(j, m, s) = 1;
                 try
-                    fun = @(c) mrqcof(T(M), I(M), N(M), c, 0);
-                    [res, ssq, cnt] = LMFnlsq(fun, [exp(P_linfit(2)) -P_linfit(1)]);
+                    fun = @(c) mrqcof(T(M), I(M), I(M)./N(M), c, 0);
+                    [res, ssq, cnt] = LMFnlsq(fun, [exp(P_linfit(2)) -P_linfit(1)]); %, 'Display', 1);
                     S_s0map(j, m, s) = res(1);
                     S_r2smap(j, m, s) = res(2);
                 catch
@@ -53,7 +56,7 @@ for s = 1:size(S_abs, 3)
                     % Ok if there is something inside...
                     if S_s0map(j, m, s) > 0 && S_r2smap(j, m, s) > 0 && cnt > 0
                         % Sum of squares
-                        [dy, alpha] = mrqcof(T(M), I(M), N(M), ...
+                        [dy, alpha] = mrqcof(T(M), I(M), I(M)./N(M), ...
                             [S_s0map(j, m, s) S_r2smap(j, m, s)], 0);
                         S_csqmap(j, m, s) = sum(dy.^2);
 
@@ -94,7 +97,7 @@ alpha = zeros(ma, ma);
 
 [ymod, dyda] = func_monoexp_const(x, func_a, func_c);
 
-dy = (ymod - y) .* (min(sig)./sig);
+dy = (ymod - y) .* (sig./max(sig));
 for k = 1:ndata
     for i = 1:ma
         for j = 1:ma
