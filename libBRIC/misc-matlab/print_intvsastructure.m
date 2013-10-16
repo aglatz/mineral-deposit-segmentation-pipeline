@@ -1,4 +1,4 @@
-function [H] = print_intvsastructure(Ret, type, Q_idx, fvalid)
+function [H] = print_intvsastructure(Ret, type, Q_idx, fvalid, varargin)
 N_subject = length(Ret);
 N_roi = length(Ret(1).Lab_roi);
 Mat_ntis = NaN(N_subject, N_roi);
@@ -14,6 +14,11 @@ for idx_roi = 1:N_roi
     Tmp2 = reshape([Tmp1.I_feat], length(Tmp1(1).I_feat), length(Tmp1))';
     M = [Tmp1.I_feat_fvalid] > fvalid;
     Mat_feat(M, idx_roi) = Tmp2(M, Q_idx);
+end
+if ~isempty(varargin)
+    Mat_ref = repmat(Mat_ntis(:, varargin{1}), 1, size(Mat_ntis, 2));
+    Mat_ntis = Mat_ntis ./ Mat_ref;
+    Mat_feat = Mat_feat ./ Mat_ref;
 end
 % Average values
 fprintf(['- ' type ' ----------------------------------------------------\n']);
