@@ -3,6 +3,7 @@ addpath('${SCRIPT_DIR}/LIBRA');
 addpath('${SCRIPT_DIR}/libBRIC/misc-matlab');
 
 S = load_series('${ARG_0}', []);
+S = S(:, :, :, 1);
 % Sum Z
 S_z = sum(S, 3);
 % Sum X
