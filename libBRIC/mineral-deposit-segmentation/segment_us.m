@@ -137,15 +137,15 @@ for idx_lab = 1:N_lab
     Ret.S_ntis = Ret.S_ntis + cast(SM_ntis, class(Ret.S_ntis)) .* Lab(idx_lab);
     
     % Thresholding (Derive threshold from first ROI if not given)
-%     if idx_lab == 1
+    if idx_lab == 1
         [SM_hypos, I_thr] = ...
             thresh_filter(S_gre, S_t1w, SM_oli, I_ntis_means, C_ntis, ...
                           RDs, P_thr, []);
-%     else
-%         [SM_hypos, I_thr] = ...
-%             thresh_filter(S_gre, S_t1w, SM_oli, Ret.I_ntis_means(idx_lab, :), C_ntis, ...
-%                           RDs, P_thr, I_thr);      
-%     end
+    else
+        [SM_hypos, I_thr] = ...
+            thresh_filter(S_gre, S_t1w, SM_oli, Ret.I_ntis_means(idx_lab, :), C_ntis, ...
+                          RDs, P_thr, I_thr);      
+    end
     Ret.I_thr(idx_lab, :) = [I_thr, Lab(idx_lab)];
 
     % Save hypointensity masks
