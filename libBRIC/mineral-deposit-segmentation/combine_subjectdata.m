@@ -10,7 +10,8 @@ anot_file = '/media/LP3TBdisk/Andreas_PhD/mineral/annot.csv';
 base_path = '/media/LP3TBdisk/Andreas_PhD/mineral-deposit-segmentation-pipeline/BRICpipe';
 base_name = 'subjects_asps_318_checked_both_t2w';
 sub_file = fullfile(base_path, [base_name '.csv']);
-mat_name = [base_name '_blob.mat']; % matlab file for saving results
+mat_name = [base_name '_all.mat']; % matlab file for saving results
+ps_name = [base_name '_all'];
 t2swhypo_name = 'T2swHypo_mask'; % name of T2*w hypointensity mask subject directory
 t2swhypot1whypo_name = 'T2swHypoT1whypo_mask';
 t2swhypot1whyper_name = 'T2swHypoT1whyper_mask';
@@ -21,6 +22,7 @@ t1w_name = 'T1W_brain_restore';
 t2w_name = 'T2W_brain_restore';
 r2s_name = 'R2s';
 r2_name = 'R2';
+r2d_name = 'R2d';
 pha_name = 'GRE_phu';
 pha_valid_name = 'GRE_sos_bin';
 icv_name = 'GRE_brain_mask'; % name of ICV mask
@@ -141,6 +143,18 @@ for i=1:N_total
         end
         Ret(ret_idx).R2Valid = 1;
         
+                
+        % R2d Intensity info
+        S_r2d = single(load_series(fullfile(path, r2d_name), []));
+        N_lab = length(Ret(ret_idx).Lab_roi);
+        for lab_idx = 1:N_lab
+            SM_ntis = S_ntis == Ret(ret_idx).Lab_roi(lab_idx);
+            SM_feat = S_feat == Ret(ret_idx).Lab_roi(lab_idx);
+            SM_valid = S_r2d > 0 & SM_brain;
+            Ret(ret_idx).R2d(lab_idx) = get_tis_ints(S_r2d, SM_ntis, SM_feat, SM_valid);
+        end
+        Ret(ret_idx).R2dValid = 1;
+        
         try
             % Pha Intensity info
             S_pha = single(load_series(fullfile(path, pha_name), []));
@@ -169,6 +183,9 @@ save(mat_name);
 % Uncomment from here upwards if run once
 
 load(mat_name);
+% M = [Ret.Age] < 65;
+% Ret = Ret(M);
+% ps_name = [base_name '_iso_lt65'];
 
 % Summary stats
 N_subject = length(Ret);
@@ -184,21 +201,49 @@ fprintf('#CC roi: %d\n', N_CC_roi);
 fprintf('#CC:'); [Ret(1).Lab_roi; N_CC], sum(N_CC)
 fprintf('=================================================================\n');
 
+save_ps_figure(ps_name, []);
+% Intensities
+[H] = print_intvsastructure(Ret, 'T2sw', 3, 0.75, 1);
+save_ps_figure(ps_name, H);
+[H] = print_intvsastructure(Ret, 'T2w', 3, 0.75, 1);
+save_ps_figure(ps_name, H);
+[H] = print_intvsastructure(Ret, 'T1w', 3, 0.75, 1);
+save_ps_figure(ps_name, H);
+[H] = print_intvsastructure(Ret, 'R2s', 3, 0.75);
+save_ps_figure(ps_name, H);
+[H] = print_intvsastructure(Ret, 'R2', 3, 0.75);
+save_ps_figure(ps_name, H);
+[H] = print_intvsastructure(Ret, 'R2d', 3, 0.75);
+save_ps_figure(ps_name, H);
+M = [Ret.PhaValid] > 0;
+[H] = print_intvsastructure(Ret(M), 'Pha', 3, 0.75);
+save_ps_figure(ps_name, H);
+% Appearance
+[H] = print_appvsastructure(Ret, 'T2sw', 0.75);
+save_ps_figure(ps_name, H);
+[H] = print_appvsastructure(Ret, 'T2w', 0.75);
+save_ps_figure(ps_name, H);
+[H] = print_appvsastructure(Ret, 'T1w', 0.75);
+save_ps_figure(ps_name, H);
+% [H] = print_appvsastructure(Ret, 'R2s');
+% save_ps_figure(ps_name, H);
+% [H] = print_appvsastructure(Ret, 'R2');
+% save_ps_figure(ps_name, H);
+M = [Ret.PhaValid] > 0;
+[H] = print_appvsastructure(Ret(M), 'Pha', 0.75);
+save_ps_figure(ps_name, H);
+
 % Per subject count & volume
 Loc = Ret(1).Lab_roi;
-LocMat = zeros(N_subject, length(Loc)+3);
-VolMat = zeros(N_subject, length(Loc)+3);
+LocMat = zeros(N_subject, length(Loc)+1);
+VolMat = zeros(N_subject, length(Loc)+1);
 for idx = 1:length(Loc)
     [LocMat(:, idx), Val]  = get_cc_avg_stats({Ret.CC}, Loc(idx), 'vol', '', 'sum');
     VolMat(:, idx) = cell2mat(Val);
 end
 LocMat(:, length(Loc)+1) = sum(LocMat(:, 1:4), 2);
-LocMat(:, length(Loc)+2) = sum(LocMat(:, 5:length(Loc)), 2);
-LocMat(:, length(Loc)+3) = sum(LocMat(:, 1:length(Loc)), 2);
 VolMat(:, 1:length(Loc)) = VolMat(:, 1:length(Loc)) ./ repmat([Ret.ICV]', 1, length(Loc));
 VolMat(:, length(Loc)+1) = sum(VolMat(:, 1:4), 2);
-VolMat(:, length(Loc)+2) = sum(VolMat(:, 5:length(Loc)), 2);
-VolMat(:, length(Loc)+3) = sum(VolMat(:, 1:length(Loc)), 2);
 H = figure; %create_ps_figure;
 subplot(2,1,1);
 hl = boxplot(LocMat+eps, 'plotstyle', 'compact'); %'notch', 'on');
@@ -206,8 +251,7 @@ for ih=1:size(hl, 1)
     set(hl(ih, :), 'Color', 'k');
 end
 set(gca, 'XTick', 1:size(LocMat, 2));
-set(gca, 'XTickLabel', {'CL','PL', 'GL', 'IL', ...
-                        'CR', 'PR', 'GR', 'IR', 'Left', 'Right', 'Left+Right'}');
+set(gca, 'XTickLabel', {'C','P', 'G', 'I', 'Left+Right'}');
 xlabel('\bf Anatomical structure(s)');
 ylabel('\bf BGID count per subject');
 fprintf('-- Relative BGID count per subject --\n');
@@ -219,14 +263,13 @@ for ih=1:size(hl, 1)
     set(hl(ih, :), 'Color', 'k');
 end
 set(gca, 'XTick', 1:size(LocMat, 2));
-set(gca, 'XTickLabel', {'CL','PL', 'GL', 'IL', ...
-                        'CR', 'PR', 'GR', 'IR', 'Left', 'Right', 'Left+Right'}');
+set(gca, 'XTickLabel', {'C','P', 'G', 'I', 'Left+Right'}');
 xlabel('\bf Anatomical structure(s)');
 ylabel(sprintf('\\bfBGID load per subject\n\\bfin ppm of ICV'));
 fprintf('-- Relative BGID volume per subject in ppm of ICV --\n');
 quantile(VolMat.*1e6, [.25 .5 .75])
 fprintf('---------------------------------------------------------\n');
-%save_ps_figure(OutFile, H);
+save_ps_figure(ps_name, H);
 
 % Total volume
 H = figure; %create_ps_figure;
@@ -238,11 +281,12 @@ ylabel('\bf Total relative BGID volume in permille of ICV');
 fprintf('-- Total Relative BGID volume in permille of ICV --\n');
 Tmp
 fprintf('---------------------------------------------------\n');
+save_ps_figure(ps_name, H);
 
 % Stats of CC within an area (vol, max. area, compactness, rel. aniso)
 Loc = cell(3, 1);
-Loc{1} = Ret(1).Lab_roi([1 2 4 5 6 8]);
-Loc{2} = Ret(1).Lab_roi([3 7]);
+Loc{1} = Ret(1).Lab_roi([1 2 4]);
+Loc{2} = Ret(1).Lab_roi([3]);
 Loc{3} = Ret(1).Lab_roi;
 Q = [.25 .5 .75];
 Field = cell(4, 1);
