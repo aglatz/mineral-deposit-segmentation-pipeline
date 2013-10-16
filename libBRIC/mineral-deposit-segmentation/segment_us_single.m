@@ -68,7 +68,7 @@ for idx_vain = 1:N_vain
 end
 
 % Delete previous version of report file
-% Subject = '/media/LP3TBdisk/Andreas_PhD/mineral-deposit-segmentation-pipeline/BRICpipe/asps382';
+% Subject = '/media/LP3TBdisk/Andreas_PhD/mineral-deposit-segmentation-pipeline/BRICpipe/asps202';
 if ~isempty(ReportName)
     ReportFile = fullfile(Subject, ReportName);
     save_ps_figure(ReportFile, []); % Deletes previous file
@@ -77,7 +77,7 @@ else
 end
 
 % Read ROI
-RoiName = 'RO_weinew_mask';
+RoiName = 'RO_weinewch_mask';
 RoiFile = fullfile(Subject, RoiName);
 S_roi = load_series(RoiFile, []);
 Roi = roi_init(S_roi);
@@ -130,26 +130,26 @@ end
 
 NII = load_series(RoiFile, 0);
 F = NII.hdr.dime.pixdim(2:4);
-L = conncomp_init(logical(S_hypos), 3);
-L_iso = interp_series(L, [], 'nearest', F, [min(F) min(F) min(F)]);
-CC_s = conncomp_list(L, L_iso, S_roi, S_gre, F, logical(S_hypos), logical(S_hypos));
-% CC = struct2cell(CC_s);
-% CC = reshape(CC, size(CC, 1), size(CC, 3))';
-% save_xls(fullfile(Subject, 'NonTis_lab_mask'), {'%d', '%0.2f', '%0.2f', '%d', '%0.2f', '%0.2f', '%d', '%0.2f', '%0.2f'}, CC);  
-com = [CC_s.com];
-ra =[CC_s.ra];
-loc = [CC_s.loc];
-diff = ra-com;
-M = diff > 0 & loc == 11;
-lab = [CC_s.lab];
-labs = lab(M);
+% L = conncomp_init(logical(S_hypos), 3);
+% L_iso = interp_series(L, [], 'nearest', F, [min(F) min(F) min(F)]);
+% CC_s = conncomp_list(L, L_iso, S_roi, S_gre, F, logical(S_hypos), logical(S_hypos));
+% % CC = struct2cell(CC_s);
+% % CC = reshape(CC, size(CC, 1), size(CC, 3))';
+% % save_xls(fullfile(Subject, 'NonTis_lab_mask'), {'%d', '%0.2f', '%0.2f', '%d', '%0.2f', '%0.2f', '%d', '%0.2f', '%0.2f'}, CC);  
+% com = [CC_s.com];
+% ra =[CC_s.ra];
+% loc = [CC_s.loc];
+% diff = ra-com;
+% M = diff > 0 & loc == 11;
+% lab = [CC_s.lab];
+% labs = lab(M);
 SM_hypos = logical(S_hypos);
-for hu = 1:sum(M)
-    SM_hypos = SM_hypos & ~(L == labs(hu));
-end
-
+% for hu = 1:sum(M)
+%     SM_hypos = SM_hypos & ~(L == labs(hu));
+% end
+% 
 I_thr = [I_thr{:}]';
-SM_hypos(SM_hypos) = S_gre(SM_hypos) < I_thr(1, 1);
+% SM_hypos(SM_hypos) = S_gre(SM_hypos) < I_thr(1, 1);
 
 % CC Filtering
 S_hypos = cc_filter(S_gre, S_t1w, S_roi, ...
@@ -191,8 +191,8 @@ if SaveMaskFlag
     % Save non tissue mask
     save_series(RoiFile, fullfile(Subject, 'NonTis_mask'), ...
                 S_nontis, roi_nifti_sliceno(Roi, []));
-	save_series(RoiFile, fullfile(Subject, 'NonTis_lab_mask'), ...
-                L, roi_nifti_sliceno(Roi, [])); 
+% 	save_series(RoiFile, fullfile(Subject, 'NonTis_lab_mask'), ...
+%                 L, roi_nifti_sliceno(Roi, [])); 
     % Save norm tissue mask
     save_series(RoiFile, fullfile(Subject, 'NormTis_mask'), ...
                 S_ntis, roi_nifti_sliceno(Roi, []));
@@ -223,4 +223,4 @@ Ret.Input.IntvarP = IntvarP;
 Ret.I_thr = I_thr;
 Ret.I_ntis_means = I_ntis_means;
 Ret.Fit = Fit;
-Ret.CC = CC_s;
+% Ret.CC = CC_s;
