@@ -2,6 +2,8 @@ addpath('${SCRIPT_DIR}/NIFTI');
 addpath('${SCRIPT_DIR}/libBRIC/misc-matlab');
 
 SM_basgang = load_series('${ARG_0}', []);
+SM_gp = SM_basgang==13 | SM_basgang==52; % Globus pallidus
+M_ch = reshape(sum(sum(SM_gp, 1), 2), 1, size(SM_gp, 3)); % Caudate head
 S_roi = zeros(size(SM_basgang), 'uint8');
 for i = ...
 [13 52 11 12 50 51 10 49 16] % FSL FIRST labels: regions to dilate
@@ -20,6 +22,9 @@ for i = ...
 		S_roi(SM_tmp) = i_new;
 	end
 	SM_tmp = SM_basgang == i;
+	if i == 11 | i == 50
+		SM_tmp(:, :, ~M_ch) = false; % Remove caudate tail
+	end
 	S_roi(SM_tmp) = i;
 end
 % Remove thalamus and brainstem
