@@ -1,6 +1,6 @@
 function [Ret, CC] = segment_us_single(Subject, RoiLabelTable, ReportName, ...
                                        InterpFactor, ThreshFactor, ...
-                                       AdaptiveFlag, IntvarP, varargin)
+                                       AdaptiveFlag, TE_gre, dR2s_thr, varargin)
 % This function expects three files in each subject directory:
 % - RO_mask: the masks with the regions of interests
 % - GRE_brain_restore: the GRE volume which was brain extracted
@@ -32,8 +32,8 @@ function [Ret, CC] = segment_us_single(Subject, RoiLabelTable, ReportName, ...
 %                        segment_us())
 %         AdaptiveFlag - If set to 'true' the T2*w is refined with
 %                        an adaptive method
-%         IntvarP - Cumulative probability that defines the threshold of
-%                   the T2*w intensity variability filter
+%         TE_gre - Echo time of gradient echo volume.
+%         dR2s_thr - R2* threshold for filtering connected components.
 % OPTIONAL INPUTS: SaveMaskFlag - Controls the saving of the generated
 %                                 masks. Default is 'true'.
 % OUTPUT: The structure from validate_raw() plus additional element
@@ -68,7 +68,7 @@ for idx_vain = 1:N_vain
 end
 
 % Delete previous version of report file
-% Subject = '~/tmp/mineral/1/13449';
+% Subject = '~/tmp/mineral/4/14073';
 if ~isempty(ReportName)
     ReportFile = fullfile(Subject, ReportName);
     save_ps_figure(ReportFile, []); % Deletes previous file
@@ -84,10 +84,10 @@ Roi = roi_init(S_roi);
 S_roi = load_series(RoiFile, roi_nifti_sliceno(Roi, []));
 
 % Pool signal intensities from corresponding left and right hemisphere structures
-S_roi(S_roi == 50) = 11;
-S_roi(S_roi == 51) = 12;
-S_roi(S_roi == 52) = 13;
-S_roi(S_roi == 55) = 14;
+% S_roi(S_roi == 50) = 11;
+% S_roi(S_roi == 51) = 12;
+% S_roi(S_roi == 52) = 13;
+% S_roi(S_roi == 55) = 14;
 
 % Read Reference
 try
@@ -100,7 +100,7 @@ end
 % Read T2sw/T1w volumes
 T2swName = 'GRE_brain_restore';
 S_gre = double(load_series(fullfile(Subject, T2swName), roi_nifti_sliceno(Roi, [])));
-T1wName = 'T2W_brain_restore';
+T1wName = 'T1W_brain_restore';
 S_t1w = double(load_series(fullfile(Subject, T1wName), roi_nifti_sliceno(Roi, [])));
 
 % Initialize output variables and start segmentation
@@ -127,11 +127,9 @@ for idx_iter = 1:N_iter
     Fit{idx_iter} = Ret.Fit;
 end
 
-% CC Filtering
-S_hypos = cc_filter(S_gre, S_t1w, S_roi, ...
-    logical(S_hypos), logical(S_ntis), [], [I_thr{:}]');
-[S_hypos, S_hypos_hypo, S_hypos_hyper] = cc_filter(S_gre, S_t1w, S_roi, ...
-    logical(S_hypos), logical(S_ntis), IntvarP, [I_thr{:}]');
+% CC Filtering - TODO: pass input variables from main function
+[S_hypos, S_hypos_hypo, S_hypos_hyper, App] = cc_filter(S_gre, TE_gre, ...
+    S_t1w, [], [], S_roi, logical(S_hypos), S_ntis, [I_thr{:}]', dR2s_thr, .5);
 
 % Summary plot
 H = figure; %create_ps_figure;
@@ -180,10 +178,10 @@ end
 NII = load_series(RoiFile, 0);
 F = NII.hdr.dime.pixdim(2:4);
 if ~isempty(S_ref)
-    Ret = validate_raw(S_hypos, S_ref, [], F);
+	Ret = validate_raw(S_hypos, S_ref, [], F);
 else
-    % Fake validation just to get the volume
-    Ret = validate_raw(S_hypos, S_hypos, [], F);
+	S_ref = zeros(size(S_hypos));
+    Ret = validate_raw(S_hypos, S_ref, [], F);
 end
 
 % Add input parameters to output
@@ -193,9 +191,12 @@ Ret.Input.ReportName = ReportName;
 Ret.Input.InterpFactor = InterpFactor;
 Ret.Input.ThreshFactor = ThreshFactor;
 Ret.Input.AdaptiveFlag = AdaptiveFlag;
-Ret.Input.IntvarP = IntvarP;
+Ret.Input.TE_gre = TE_gre;
+Ret.Input.dR2s_thr = dR2s_thr;
 
 % Add accumulated results to output
 Ret.I_thr = I_thr;
 Ret.I_ntis_means = I_ntis_means;
 Ret.Fit = Fit;
+Ret.App = App;
+

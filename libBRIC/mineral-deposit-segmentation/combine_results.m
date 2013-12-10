@@ -1,20 +1,21 @@
 close all; clear all; clc
 
-Name = 'subjects_asps_356';
-Pfx = 'ad_t1w0.975_t1wr2s_q0_45_both';
-N_cpus = 1;
+Name = 'subjects_98';
+Pfx = 'ad_t1w0.975_14_0_5';
 AdaptiveFlag = true;
-RoiLabelTable = {[13 11 12 14], [52 50 51 55]};
-% [Ret, Subjects, Over] = segment_us_mp([Name '.csv'], ...
-%                                       RoiLabelTable, N_cpus, ...
-%                                       'ThreshFactor', [1 0], ...
-%                                       'AdaptiveFlag', AdaptiveFlag, ...
-%                                       'SaveMaskFlag', true, ...
-%                                       'ReportName', 'class', ...
-%                                       'IntvarP', 0.45);
-% save([Name '_' Pfx '.mat']);
+RoiLabelTable = {[13, 11, 12, 14]};
+N_cpus = 6;
+[Ret, Subjects, Over] = segment_us_mp([Name '.xls'], ...
+                                      RoiLabelTable, N_cpus, ...
+                                      'ThreshFactor', [1 0], ...
+                                      'AdaptiveFlag', AdaptiveFlag, ...
+                                      'SaveMaskFlag', true, ...
+                                      'ReportName', 'class', ...
+                                      'TE_gre', 15e-3, ...
+                                      'dR2s_thr', 14);
+save([Name '_' Pfx '.mat']);
 
-[Subjects, J, D, V, V_ref, IntVarP] = load_matdata([Name '_' Pfx '.mat'], 0);
+[Subjects, J, D, V, V_ref] = load_matdata([Name '_' Pfx '.mat'], 0);
 
 fprintf('-- Jaccard (All) --');
 Q = [.25 .5 .75];
@@ -29,8 +30,8 @@ quantile(V, Q)
 fprintf('-- Reference volume (All) --');
 quantile(V_ref, Q)
 
-fprintf('-- IntVarP (All) --');
-quantile(IntVarP, Q)
+% fprintf('-- IntVarP (All) --');
+% quantile(IntVarP, Q)
 
 M_vol = V > 0;
 M_vol_ref = V_ref > 0;
@@ -49,8 +50,8 @@ quantile(V(M), Q)
 fprintf('-- Reference volume --');
 quantile(V_ref(M), Q)
 
-fprintf('-- IntVarP --');
-quantile(IntVarP(M), Q)
+% fprintf('-- IntVarP --');
+% quantile(IntVarP(M), Q)
 
 % tp - both the method and the rater found BGIDs
 % tn - both the method and the rater did not find BGIDs

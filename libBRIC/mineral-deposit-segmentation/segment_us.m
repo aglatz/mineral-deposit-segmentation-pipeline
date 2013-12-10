@@ -275,9 +275,9 @@ if isempty(I_thr)
 end
 
 % Calculate T1W thresholds
-I_thr(2) = -sqrt(C_ntis(2,2))+I_ntis_mean(2);
-I_thr(3) = +sqrt(C_ntis(2,2))+I_ntis_mean(2);
-I_thr(4) = -sqrt(C_ntis(2,2)*RDs(2))+I_ntis_mean(2);
+I_thr(2) = -sqrt(C_ntis(2,2))*1.645+I_ntis_mean(2); % 90% range
+I_thr(3) = +sqrt(C_ntis(2,2))*1.645+I_ntis_mean(2);
+I_thr(4) = -sqrt(C_ntis(2,2)*RDs(2))+I_ntis_mean(2); % Robust range
 I_thr(5) = +sqrt(C_ntis(2,2)*RDs(2))+I_ntis_mean(2);
 
 % Calculate delta delta R2 dash

@@ -1,4 +1,4 @@
-function [Subjects, J, D, V, V_ref, IntVarP, Sens, Spec] = load_matdata(MatName, varargin)
+function [Subjects, J, D, V, V_ref, Sens, Spec] = load_matdata(MatName, varargin)
 load(MatName);
 if exist('out', 'var')
     Ret = [out.Ret];
@@ -10,9 +10,6 @@ if exist('out', 'var')
         cnt = cnt + length(Tmp);
     end
 end
-
-Input = [Ret.Input];
-IntVarP = [Input.IntvarP];
 
 if nargin > 1 && varargin{1}
     Ret = [Ret.CA];
