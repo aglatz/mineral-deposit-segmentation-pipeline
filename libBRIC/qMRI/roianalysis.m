@@ -1,7 +1,7 @@
 addpath('NIFTI/');
 addpath('libBRIC/misc-matlab');
 
-close all; clear all;
+%close all; clear all;
 
 %Dir = '/home/aglatz/sf_V_DRIVE/Andreas_PhD/QMRI/Phantom/MnCl2/19676';
 %S_roi = load_series(fullfile(Dir, 'Meta', 'DESPOT1_T1Map_roi'), []);
@@ -9,9 +9,9 @@ close all; clear all;
 %S     = load_series(fullfile(Dir, '9', 'R2s'), []);
 %Mat   = csvread(fullfile(Dir, 'Meta', 'Conc.csv'));
 
-Dir = '/home/aglatz/sf_V_DRIVE/Andreas_PhD/QMRI/Phantom/MnCl2/19941';
+Dir = '/home/aglatz/sf_V_DRIVE/Andreas_PhD/QMRI/Phantom/MnCl2/20315';
 S_roi = load_series(fullfile(Dir, 'Meta', 'DESPOT1HIFI_T1Map_roi'), []);
-S = double(load_series(fullfile(Dir, '23', 'Phu_phuf0'), []));
+S = 1000./double(load_series(fullfile(Dir, 'R1HIFI', 'DESPOT1HIFI_T1Map'), []));
 Mat = csvread(fullfile(Dir, 'Meta', 'R1_map_conc.csv'));
 
 % Dir = '/home/aglatz/sf_V_DRIVE/Andreas_PhD/QMRI/Phantom/MnCl2/19928';
@@ -67,14 +67,15 @@ for slice_idx = 1:N_slices
     %text(X, Y(slice_idx, :), num2str(ones(length(X), 1) .* slice_idx));
     errorbar(X, Y(slice_idx, :), Y_std(slice_idx, :), 'Color', col(slice_idx, :));
     
-    Res(slice_idx, :) = polyfit(X, Y(slice_idx, :), 1);
+    Res(slice_idx, :) = robustfit(X, Y(slice_idx, :));
 end
 xlabel('MnCl_2 concentration c in mMol');
 ylabel('Mean ROI relaxivitiy R in s^{-1}');
 Tmp_mean=median(Res);
 Tmp_std=iqr(Res)./2;
-text(0.06, 0, sprintf('R=((%0.1f\\pm%0.1f)mMol^{-1}c+(%0.1f\\pm%0.1f))s^{-1}', Tmp_mean(1), Tmp_std(1), Tmp_mean(2), Tmp_std(2)));
-plot(X, polyval([Tmp_mean(1) Tmp_mean(2)], X), 'k', 'LineWidth', 3);
+Y = polyval([Tmp_mean(2) Tmp_mean(1)], X);
+text(0.06, median(Y), sprintf('R=((%0.1f\\pm%0.1f)mMol^{-1}c+(%0.1f\\pm%0.1f))s^{-1}', Tmp_mean(2), Tmp_std(2), Tmp_mean(1), Tmp_std(1)));
+plot(X, Y, 'k', 'LineWidth', 3);
 
 
 % set(gcf, 'color', 'w');

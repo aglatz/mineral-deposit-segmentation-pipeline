@@ -26,7 +26,10 @@ for $dir (@ARGV) {
 		"fa" => "",
 		"tr" => "",
 		"ti" => "",
-		"nslices" => ""
+		"nslices" => "",
+		"txgain" => "",
+		"arxgain" => "",
+		"drxgain" => ""
 	);
 
 	my $file;
@@ -80,9 +83,21 @@ for $dir (@ARGV) {
 			$sliceposend = $1;
 			$cnt = $cnt + 1;
 		}
+		if ( $line =~ /^\(0019,1094\) SS (\d*) / ) { # TransmitGain
+			$arg{"txgain"} = $1;
+			$cnt = $cnt + 1;
+		}
+		if ( $line =~ /^\(0019,1095\) SS (\d*) / ) { # AnalogReceiverGain
+			$arg{"arxgain"} = $1;
+			$cnt = $cnt + 1;
+		}
+		if ( $line =~ /^\(0019,1096\) SS (\d*) / ) { # DigitalReceiverGain
+			$arg{"drxgain"} = $1;
+			$cnt = $cnt + 1;
+		}
 	}
 	close(FH);
-	unless ( $cnt == 6 ) {
+	unless ( $cnt == 9 ) {
 		printf("$cnt Warning: Not all fields valid in file $dir/Input" . $arg{"txtname"} . "!\n");
 		next;
 	}
@@ -105,12 +120,36 @@ my $tr = -1;
 my $irtr = -1;
 my $irfa = -1;
 my $nslices = -1;
+my $txgain = -1;
+my $arxgain = -1;
+my $drxgain = -1;
 for my $argref (@arglist) {
 	if ( $nslices < 0 ) {
 		$nslices = $argref->{'nslices'};
 	} else {
 		if ( $argref->{'nslices'} != $nslices ) {
 			printf("Warning: Nslices of $argref->{'niiname'} is different!\n");
+		}
+	}
+	if ( $txgain < 0 ) {
+		$txgain = $argref->{'txgain'};
+	} else {
+		if ( $argref->{'txgain'} != $txgain ) {
+			printf("Warning: txgain of $argref->{'niiname'} is different!\n");
+		}
+	}
+	if ( $arxgain < 0 ) {
+		$arxgain = $argref->{'arxgain'};
+	} else {
+		if ( $argref->{'arxgain'} != $arxgain ) {
+			printf("Warning: arxgain of $argref->{'niiname'} is different!\n");
+		}
+	}
+	if ( $drxgain < 0 ) {
+		$drxgain = $argref->{'drxgain'};
+	} else {
+		if ( $argref->{'drxgain'} != $drxgain ) {
+			printf("Warning: drxgain of $argref->{'niiname'} is different!\n");
 		}
 	}
 
