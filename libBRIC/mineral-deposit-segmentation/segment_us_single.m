@@ -92,7 +92,15 @@ S_roi = load_series(RoiFile, roi_nifti_sliceno(Roi, []));
 % Read Reference
 try
     FeName = 'FE_roi_mask';
-    S_ref = load_series(fullfile(Subject, FeName), roi_nifti_sliceno(Roi, []));
+    S_ref_orig = load_series(fullfile(Subject, FeName), roi_nifti_sliceno(Roi, []));
+    S_ref = zeros(size(S_ref_orig), class(S_ref_orig));
+    N_iter = length(RoiLabelTable);
+    for idx_iter = 1:N_iter
+        Labs = RoiLabelTable{idx_iter};
+        for lab = Labs
+            S_ref(S_ref_orig == lab) = lab;
+        end
+    end
 catch
     S_ref = [];
 end
