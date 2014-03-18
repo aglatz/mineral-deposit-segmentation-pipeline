@@ -1,12 +1,14 @@
+function [out1, out2] = transformT1WGRE(f, Subject, adapt_flag, te)
+
 % This script processes phantom data. It can remove the appearance of CaAlg
 % balls from T1w and replace them with intensities from surrounding agar.
 % Then balls are segmented on the co-registered T1w and T2*w volumes and
 % some stats are calculated.
 % TODO: Needs more documentation.
 
-close all; clear all;
+% close all; clear all;
 
-Subject = '/home/aglatz/tmp/mineral-deposit-segmentation-pipeline/libBRIC/qMRI/test/21297/T1W';
+% Subject = '/home/aglatz/tmp/mineral-deposit-segmentation-pipeline/libBRIC/qMRI/test/21297/T1W';
 % Subject = '/home/aglatz/tmp/mineral-deposit-segmentation-pipeline/libBRIC/qMRI/test/21293/R2s/52716';
 
 % S_t1w = load_series([Subject '/T1W_brain_restore_orig'], []);
@@ -16,7 +18,7 @@ Subject = '/home/aglatz/tmp/mineral-deposit-segmentation-pipeline/libBRIC/qMRI/t
 % save_series([Subject '/GRE_brain_restore_orig'], [Subject '/GRE_brain_restore'], S_gre, []);
 
 
-RoiLabelTable = {1, 2, 4, 8, 16, 32, 64};
+RoiLabelTable = {1, 2, 3, 11, 12, 13, 21, 22, 23};
 % % RoiLabelTable = {1, 2, 3, 4, 5, 6, 7};
 % segment_us_single(Subject, RoiLabelTable, 'class', 1, [1 0], true);
 
@@ -35,52 +37,131 @@ RoiLabelTable = {1, 2, 4, 8, 16, 32, 64};
 % S_t1w_new = 400 + 50*randn(size(S_t1w));
 % save_series([Subject '/T1W_brain_restore_orig'], [Subject '/T1W_brain_restore'], S_t1w_new, []);
 
-[~, CC] = segment_us_single(Subject, RoiLabelTable, 'class', 1, [1 0], true, 0.3);
+segment_us_single(Subject, RoiLabelTable, 'class', 1, [f 0], adapt_flag, te, 0);
 
 S_roi = load_series([Subject '/RO_mask.nii.gz'], []);
+S_norm = load_series([Subject '/NormTis_mask.nii.gz'], []);
 SM_hypo = logical(load_series([Subject '/T2swHypo_mask.nii.gz'], []));
 NII = load_series([Subject '/RO_mask.nii.gz'], 0);
 F = NII.hdr.dime.pixdim(2:4);
 Dim = 3;
-L_hypo = conncomp_init(SM_hypo, Dim);
-SM_hypo_ref = logical(load_series([Subject '/T2swHypo_ref_mask.nii.gz'], []));
+% L_hypo = conncomp_init(SM_hypo, Dim);
+SM_hypo_ref = logical(load_series([Subject '/FE_roi_mask.nii.gz'], []));
 L_hypo_ref = conncomp_init(SM_hypo_ref, Dim);
 
-S_t1w = load_series([Subject '/T1W_brain_restore_orig'], []);
+S_gre = single(load_series([Subject '/GRE_brain_restore'], []));
+fd = fopen([Subject '/GRE_brain_restore_mask.txt'], 'r');
+Noise_gre = single(fscanf(fd, '%d'));
+fclose(fd);
+
+S_t1w = single(load_series([Subject '/T2w_brain_restore'], []));
+fd = fopen([Subject '/T2w_brain_restore_mask.txt'], 'r');
+Noise_t1w = single(fscanf(fd, '%d'));
+fclose(fd);
 
 Lab = cell2mat(RoiLabelTable);
-out = NaN(length(Lab), 8);
-VolAll = cell(length(Lab), 1);
-It1wAll = cell(length(Lab), 1);
+out1 = NaN(length(Lab), 3);
+out2 = NaN(length(Lab), 8, 3);
 for idx_lab = 1:length(Lab)
-    SM_roi = S_roi == Lab(idx_lab);
-    Lab_hypo = unique(L_hypo(SM_roi & SM_hypo_ref)); Lab_hypo = Lab_hypo(Lab_hypo > 0);
+	SM_roi = S_roi == Lab(idx_lab);
+    SM_norm = S_norm == Lab(idx_lab);
+    out1(idx_lab, 1) = Lab(idx_lab);
+    Lab_hypo = unique(L_hypo_ref(SM_roi & SM_hypo)); Lab_hypo = Lab_hypo(Lab_hypo > 0);
+    out1(idx_lab, 2) = length(Lab_hypo);
     Lab_hypo_ref = unique(L_hypo_ref(SM_roi)); Lab_hypo_ref = Lab_hypo_ref(Lab_hypo_ref > 0);
-    Lab_hypo_total = unique(L_hypo(SM_roi)); Lab_hypo_total = Lab_hypo_total(Lab_hypo_total > 0);
-    Vol = NaN(1, length(Lab_hypo));
-    It1w = NaN(1, length(Lab_hypo));
-    for idx_lab_cc = 1:length(Lab_hypo)
-        SM_tmp = L_hypo == Lab_hypo(idx_lab_cc);
-        Vol(idx_lab_cc) = get_volume(SM_tmp, F);
-        It1w(idx_lab_cc) = median(S_t1w(SM_tmp));
-    end
-    if isempty(Vol)
-        out(idx_lab, 1) = Lab(idx_lab);
-        VolAll{idx_lab} = NaN;
-        It1wAll{idx_lab} = NaN;
-    else
-        out(idx_lab, :) = [Lab(idx_lab) ...
-                           length(Lab_hypo_total) length(Lab_hypo) length(Lab_hypo_ref) ...
-                           median(Vol) iqr(Vol) mean(Vol) std(Vol)];
-        VolAll{idx_lab} = Vol;
-        It1wAll{idx_lab} = It1w;
+    out1(idx_lab, 3) = length(Lab_hypo_ref);
+    for idx2_lab = 1:length(Lab_hypo_ref)
+        SM_tmp = L_hypo_ref == Lab_hypo_ref(idx2_lab);
+        % position
+        [~, ~, z] = ind2sub(size(SM_tmp), find(SM_tmp));
+        out2(idx_lab, idx2_lab, 1) = median(z);
+        % gre contrast
+        out2(idx_lab, idx2_lab, 2) = abs( median(S_gre(L_hypo_ref == Lab_hypo_ref(idx2_lab))) - ...
+                                          median(S_gre(SM_norm))) / Noise_gre;
+        if (~sum(Lab_hypo == Lab_hypo_ref(idx2_lab)))
+            out2(idx_lab, idx2_lab, 2) = out2(idx_lab, idx2_lab, 2)*-1;
+        end
+        % t1w contrast
+        out2(idx_lab, idx2_lab, 3) = abs( median(S_t1w(L_hypo_ref == Lab_hypo_ref(idx2_lab))) - ...
+                                          median(S_t1w(SM_norm))) / Noise_t1w;
+        if (~sum(Lab_hypo == Lab_hypo_ref(idx2_lab)))
+            out2(idx_lab, idx2_lab, 3) = out2(idx_lab, idx2_lab, 3)*-1;
+        end
     end
 end
 
-save([Subject '/out.mat'], 'CC', 'VolAll', 'out');
-csvwrite([Subject '/out.csv'], out);
-fprintf('Label Total TP Ref median iqr mean std\n');
-out
+fprintf('Label Selected Ref\n');
+out1
+csvwrite([Subject '/out1.csv'], out1);
+out2
+csvwrite([Subject '/out2.csv'], out2);
+fprintf('------------------\n');
+
+figure;
+for idx1 = 1:2
+    subplot(1,2,idx1);
+    hold on;
+    C = hsv(3);
+    L = cell(3, 1);
+    for idx = 1:3
+        Y = median(abs(out2(1:3+(idx-1)*3, :, 2+idx1-1)));
+        Y_std = iqr(abs(out2(1:3+(idx-1)*3, :, 2+idx1-1))) ./ 1.349;
+        errorbar(Y, Y_std, 'color', C(idx, :));
+        L{idx} = sprintf('%d,', out1(1+(idx-1)*3, 1));
+    end
+    legend(L);
+    for idx = 1:3
+        M_tmp = out2(1:3+(idx-1)*3, :, 2+idx1-1) < 0;
+        H_tmp = out2(1:3+(idx-1)*3, :, 2+idx1-1);
+        T_tmp = quantile(abs(H_tmp(M_tmp)), .95);
+        plot([1 8], [T_tmp T_tmp], 'color', C(idx, :));
+        fprintf('%s: %0.2f\n', L{idx}, T_tmp);
+    end
+    xlabel('\bf Bead number');
+    ylabel('\bf Contrast to noise ratio');
+end
+fprintf('------------------\n');
+
+
+
+% S_t1w = load_series([Subject '/T1W_brain_restore'], []);
+% 
+% Lab = cell2mat(RoiLabelTable);
+% out = NaN(length(Lab), 8);
+% VolAll = cell(length(Lab), 1);
+% It1wAll = cell(length(Lab), 1);
+% for idx_lab = 1:length(Lab)
+%     SM_roi = S_roi == Lab(idx_lab);
+%     Lab_hypo = unique(L_hypo(SM_roi & SM_hypo_ref)); Lab_hypo = Lab_hypo(Lab_hypo > 0);
+%     Lab_hypo_ref = unique(L_hypo_ref(SM_roi)); Lab_hypo_ref = Lab_hypo_ref(Lab_hypo_ref > 0);
+%     Lab_hypo_total = unique(L_hypo(SM_roi)); Lab_hypo_total = Lab_hypo_total(Lab_hypo_total > 0);
+%     Vol = NaN(1, length(Lab_hypo));
+%     It1w = NaN(1, length(Lab_hypo));
+%     for idx_lab_cc = 1:length(Lab_hypo)
+%         SM_tmp = L_hypo == Lab_hypo(idx_lab_cc);
+%         Vol(idx_lab_cc) = get_volume(SM_tmp, F);
+%         It1w(idx_lab_cc) = median(S_t1w(SM_tmp));
+%     end
+%     if isempty(Vol)
+%         out(idx_lab, 1) = Lab(idx_lab);
+%         VolAll{idx_lab} = NaN;
+%         It1wAll{idx_lab} = NaN;
+%     else
+%         out(idx_lab, :) = [Lab(idx_lab) ...
+%                            length(Lab_hypo_total) length(Lab_hypo) length(Lab_hypo_ref) ...
+%                            median(Vol) iqr(Vol) mean(Vol) std(Vol)];
+%         VolAll{idx_lab} = Vol;
+%         It1wAll{idx_lab} = It1w;
+%     end
+% end
+% 
+% save([Subject '/out.mat'], 'VolAll', 'out');
+% csvwrite([Subject '/out.csv'], out);
+% fprintf('Label Total TP Ref median iqr mean std\n');
+% out
+
+%NN = zeros(5, 1);
+
 
 % Old
 %
