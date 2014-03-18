@@ -3,13 +3,17 @@
 use strict;
 use warnings;
 
-die("\nUsage: mfa2R1map.pl <despot> <noisescale> <dir1> <dir2> ... <dirN>\n") if ($#ARGV < 3);
+die("\nUsage: mfa2R1map.pl <despot> <noisescale> <reg_flag> <dir1> <dir2> ... <dirN>\n") if ($#ARGV < 4);
+
+printf("Parameters: @ARGV\n");
 
 my $despot = shift;
 my $noisescale = shift;
+my $do_reg = shift;
 my @arglist;
 my $argcnt = 0;
 my $dir;
+my $niinames = " ";
 for $dir (@ARGV) {
 	unless ( opendir(DH, "$dir/Input") ) {
 		printf("Warning: Cannot read $dir! Wrong structure? Skipping...\n");
@@ -40,7 +44,9 @@ for $dir (@ARGV) {
 			$cnt = $cnt + 1;
 		}
 		if ($file =~ /.nii/) {
-			$arg{"niiname"} = "$dir/Input/$file";
+			system("FSLOUTPUTTYPE=NIFTI_GZ; fslsplit $dir/Input/$file in_$argcnt" . "_ -t; " .
+				   "fslcpgeom $dir/Input/$file in_$argcnt" . "_0000 -d");
+			$arg{"niiname"} = "in_$argcnt" . "_0000";
 			$cnt = $cnt + 1;
 		}
 	}
@@ -103,12 +109,26 @@ for $dir (@ARGV) {
 	}
 	$arg{"nslices"} = abs($sliceposend - $sliceposstart) / $slicethick + 1;
 
-	$arg{"imgname"} = "S_$arg{'ti'}_$arg{'tr'}_$arg{'fa'}";
-	system("FSLOUTPUTTYPE=NIFTI_PAIR; fslmaths $arg{'niiname'} $arg{'imgname'} -odt float");
+	# same niinames for registration code below
+	$niinames = $niinames . " " . $arg{'niiname'};
 
 	$arglist[$argcnt] = \%arg;
 	$argcnt = $argcnt + 1;
 }
+
+system("FSLOUTPUTTYPE=NIFTI_GZ; fslmerge -t S $niinames;");
+if ( $do_reg ) {
+	system("FSLOUTPUTTYPE=NIFTI_GZ; mv S.nii.gz S_tmp.nii.gz;" . 
+		   "mcflirt -in S_tmp -out S -refvol 0 -plots -report");
+}
+system("FSLOUTPUTTYPE=NIFTI_GZ; fslsplit S S_ -t;");
+$argcnt = 0;
+for my $argref (@arglist) {
+	$argref->{"imgname"} = "S_$argref->{'ti'}_$argref->{'tr'}_$argref->{'fa'}";	
+	system(sprintf("FSLOUTPUTTYPE=NIFTI_PAIR; fslmaths S_%04d $argref->{'imgname'} -odt float", $argcnt));
+	$argcnt = $argcnt + 1;
+}
+system("rm S_*.nii.gz");
 
 my $arg1_name = "";
 my $arg1_fa = "";
@@ -197,7 +217,7 @@ if ( !$arg2cnt ) {
 	$cmd = "$despot 1 $arg1cnt $tr $arg1_name $arg1_fa ./ $noisescale";
 	@output = ("DESPOT1_T1Map", "DESPOT1_MoMap");
 } else {
-#	$nslices = $nslices + 8; # another 2 are added by despot
+	$nslices = $nslices + 2; # another 2 are added by despot
 	# Use field strength "30" because it shortens the TI times to the actual
 	# values... if not R1 values are too low.
 	$cmd = "$despot 2 $arg1cnt $tr $arg1_name $arg1_fa $arg2cnt $arg2_name " .
@@ -216,5 +236,7 @@ system("rm -f *.hdr *.img");
 for my $file (@output) {
 	system("FSLOUTPUTTYPE=NIFTI_GZ; fslcpgeom $arglist[0]->{'niiname'} $file -d");
 }
+
+system("rm -f in_*.nii.gz");
 
 exit 0;
