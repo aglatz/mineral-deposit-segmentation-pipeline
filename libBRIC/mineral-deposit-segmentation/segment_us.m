@@ -194,23 +194,27 @@ end
 function [P_fit] = plot_rddist(S_gre, S_t1w, SM_voi, SM_ntis, I_ntis_mean, C_ntis, RDs)
 % 
 Mat = [S_gre(SM_ntis) S_t1w(SM_ntis)];
-% Mat = mvnrnd(I_ntis_mean, C_ntis, 500); % Test
+%Mat = mvnrnd(I_ntis_mean, C_ntis, 1000); % Test
+
 MD_ntis_oli_ref = (mahalanobis(Mat, I_ntis_mean, 'cov', C_ntis));
-[Y1, X] = plot_hist(MD_ntis_oli_ref, [], [], 'b', 0);
-N_samp = sum(SM_ntis(:));
-% B = chi2rnd(2, N_samp, 1);
-PD = ProbDistUnivParam('beta', [1, (N_samp-3)/2]);
-f = ((N_samp-1)^2/N_samp);
-B = random(PD, N_samp, 1)*f;
-M = B < RDs(2);
-Y2 = hist(B(M), X);
+MD_ntis_oli_ref(MD_ntis_oli_ref >= RDs(2)) = [];
+[Y1, X] = plot_hist(MD_ntis_oli_ref, [], [], 'b', 0); % dummy - just to get the values
+
+% Sample truncated chi2 distribution
+% https://stat.ethz.ch/pipermail/r-help/2012-February/302876.html
+N_samp = length(MD_ntis_oli_ref);
+B = chi2inv(rand(N_samp, 1)*chi2cdf(RDs(2), 2), 2);
+
+% Plot MDs and Chi2s
+Y2 = hist(B, X);
 hold off;
 plot_bar2(X, Y1, Y2, 'RD', 'Chi2');
 hold on;
 xlabel('\bf Robust distances in arb. units');
 ylabel('\bf Occurrence');
-% Fit = sum((Y1-Y2).^2)/(length(Y1)-1);
-[H, P_fit] = kstest2(MD_ntis_oli_ref, B(M)); %chi2gof(MD_ntis_oli_ref/f, 'cdf', PD);
+
+% Test for equal population
+[H, P_fit] = kstest2(MD_ntis_oli_ref, B);
 title(sprintf('N_total=%d, N_norm=%d, H =%d, Fit=%0.3f', sum(SM_voi(:)), sum(SM_ntis(:)), H, P_fit));
 
 
