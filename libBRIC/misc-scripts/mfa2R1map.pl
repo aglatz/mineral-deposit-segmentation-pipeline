@@ -197,7 +197,7 @@ if ( !$arg2cnt ) {
 	$cmd = "$despot 1 $arg1cnt $tr $arg1_name $arg1_fa ./ $noisescale";
 	@output = ("DESPOT1_T1Map", "DESPOT1_MoMap");
 } else {
-	$nslices = $nslices + 2; # another 2 are added by despot
+#	$nslices = $nslices + 8; # another 2 are added by despot
 	# Use field strength "30" because it shortens the TI times to the actual
 	# values... if not R1 values are too low.
 	$cmd = "$despot 2 $arg1cnt $tr $arg1_name $arg1_fa $arg2cnt $arg2_name " .
