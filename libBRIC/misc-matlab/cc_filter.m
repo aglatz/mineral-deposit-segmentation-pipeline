@@ -1,6 +1,6 @@
 function [S_hypos, S_hypos_hypo, S_hypos_hyper, App] = ...
 	cc_filter(S_gre, TE_gre, S_t1w, S_t2w, TE_t2w, S_roi, SM_hypos, ...
-              S_ntis, I_thr, dR2s_thr, phypo_thr)
+              S_ntis, I_thr, dR2s_thr, phypo_thr, intvar_thr)
 % This function filters the connected components of the preliminary
 % basal ganglia T2*w hypointensity masks according to their median
 % delta R2* value and appearance on T1w volumes. Connected components
@@ -26,8 +26,11 @@ function [S_hypos, S_hypos_hypo, S_hypos_hyper, App] = ...
 L = conncomp_init(SM_hypos, 3);
 [Lab, Loc] = conncomp_mask(L, S_roi, 0.5, S_gre);
 
-fprintf('Before: %d; dR2s_thr=%0.2f phypo_thr=%0.2f\n', ...
-        sum(SM_hypos(:)), dR2s_thr, phypo_thr);
+% Local variance of GRE
+S_gre_std = stdfilt(double(S_gre));
+
+fprintf('Before: %d; dR2s_thr=%0.2f phypo_thr=%0.2f instd_thr=%0.2f\n', ...
+        sum(SM_hypos(:)), dR2s_thr, phypo_thr, intvar_thr);
 
 % Iterate through all CCs
 N_lab = length(Lab);
@@ -42,25 +45,32 @@ for lab_idx = 1:N_lab
     SM_ntis = S_ntis == Loc(lab_idx);
     % Mask for getting the right T1w thresholds for discriminating outliers...
     M = I_thr(:, end) == Loc(lab_idx);
+
+    % Get intensity variance of feature and 'normal-appearing' tissue
+    intvar = std(double(S_gre(SM_cc)))/median(S_gre_std(SM_ntis));
     
     % Get R2* or R2' of features relative to 'normal-appearing' tissue
     % and check if the feature is Ok for inclusion in the final mask
     vol = sum(SM_cc(:));
     if isempty(S_t2w)
+        % Derive from T1w
+        % M = I_thr(:, end) == 11; 
         phypo = get_phypo(SM_cc, S_t1w, I_thr(M, 4));
+        % M = I_thr(:, end) == 14;
         phyper = get_phyper(SM_cc, S_t1w, I_thr(M, 5));
         dR2s = -1/TE_gre*log(median(S_gre(SM_cc))/median(S_gre(SM_ntis)));
-        res = dR2s > dR2s_thr && vol > 1 && phypo < phypo_thr;
+        res = dR2s > dR2s_thr && vol > 1 && phypo < phypo_thr && intvar > intvar_thr;
     else
+        % Derive from T2w
         phypo = get_phypo(SM_cc, S_t2w, I_thr(M, 4));
         phyper = get_phyper(SM_cc, S_t2w, I_thr(M, 5));
         dR2s = -1/TE_gre*log(median(S_gre(SM_cc))/median(S_gre(SM_ntis))) - ...
                -1/TE_t2w*log(median(S_t2w(SM_cc))/median(S_t2w(SM_ntis)));
-        res = dR2s > dR2s_thr && vol > 1 && phypo < phypo_thr && ...
+        res = dR2s > dR2s_thr && vol > 1 && phypo < phypo_thr && intvar > intvar_thr && ...
               phyper < phypo_thr && ~(phypo > 0.05 && phyper > 0.05);
     end
-    fprintf('Lab:%d loc:%d vol:%d phypo:%0.2f phyper:%0.2f dR2s:%0.2f', ...
-        lab_idx, Loc(lab_idx), vol, phypo, phyper, dR2s);
+    fprintf('Lab:%d loc:%d vol:%d phypo:%0.2f phyper:%0.2f dR2s:%0.2f intvar:%0.2f', ...
+        lab_idx, Loc(lab_idx), vol, phypo, phyper, dR2s, intvar);
 	App(lab_idx, 1:(end-1)) = [sum(SM_cc(:)) Loc(lab_idx) vol phypo phyper dR2s];
     
     % Make decision ...
@@ -95,3 +105,4 @@ function [phyper, SM_hyper] = get_phyper(SM, S, I_thr)
 SM_hyper = false(size(SM));
 SM_hyper(SM) = S(SM) > I_thr;
 phyper = sum(SM_hyper(:))/sum(SM(:));
+

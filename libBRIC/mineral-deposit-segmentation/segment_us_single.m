@@ -1,6 +1,7 @@
 function [Ret, CC] = segment_us_single(Subject, RoiLabelTable, ReportName, ...
-                                       InterpFactor, ThreshFactor, ...
-                                       AdaptiveFlag, TE_gre, dR2s_thr, varargin)
+                                       InterpFactor, ThreshFactor, AdaptiveFlag, ...
+                                       TE_gre, dR2s_thr, phypo_thr, intstd_thr, ...
+                                       varargin)
 % This function expects three files in each subject directory:
 % - RO_mask: the masks with the regions of interests
 % - GRE_brain_restore: the GRE volume which was brain extracted
@@ -93,6 +94,10 @@ S_roi = load_series(RoiFile, roi_nifti_sliceno(Roi, []));
 try
     FeName = 'FE_roi_mask';
     S_ref_orig = load_series(fullfile(Subject, FeName), roi_nifti_sliceno(Roi, []));
+%     S_ref_orig(S_ref_orig == 50) = 11;
+%     S_ref_orig(S_ref_orig == 51) = 12;
+%     S_ref_orig(S_ref_orig == 52) = 13;
+%     S_ref_orig(S_ref_orig == 55) = 14;
     S_ref = zeros(size(S_ref_orig), class(S_ref_orig));
     N_iter = length(RoiLabelTable);
     for idx_iter = 1:N_iter
@@ -137,7 +142,8 @@ end
 
 % CC Filtering - TODO: pass input variables from main function
 [S_hypos, S_hypos_hypo, S_hypos_hyper, App] = cc_filter(S_gre, TE_gre, ...
-    S_t1w, [], [], S_roi, logical(S_hypos), S_ntis, [I_thr{:}]', dR2s_thr, .5);
+    S_t1w, [], [], S_roi, logical(S_hypos), S_ntis, [I_thr{:}]', ...
+    dR2s_thr, phypo_thr, intstd_thr);
 
 % Summary plot
 H = figure; %create_ps_figure;

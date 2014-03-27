@@ -38,7 +38,13 @@ if exist('TE_gre', 'var') <= 0 || isempty(TE_gre)
     TE_gre = 15e-3;
 end
 if exist('dR2s_thr', 'var') <= 0 || isempty(dR2s_thr)
-    dR2s_thr = 0.5;
+    dR2s_thr = 0;
+end
+if exist('phypo_thr', 'var') <= 0 || isempty(phypo_thr)
+    phypo_thr = 0.5;
+end
+if exist('intstd_thr', 'var') <= 0 || isempty(intstd_thr)
+    intstd_thr = 1;
 end
 if exist('FuncName', 'var') <= 0 || isempty(FuncName)
     FuncName = 'segment_us_single';
@@ -66,7 +72,8 @@ for idx_j = 1:size(OverLoc, 1);
     
 	fh = str2func(FuncName);
 	Ret = fh(Subject, RoiLabelTable, ReportName, InterpFactor, ...
-             ThreshFactor, AdaptiveFlag, TE_gre, dR2s_thr);
+             ThreshFactor, AdaptiveFlag, ...
+             TE_gre, dR2s_thr, phypo_thr, intstd_thr);
 	save(fullfile(Subject, 'Ret.mat'), 'Ret');
 end
 

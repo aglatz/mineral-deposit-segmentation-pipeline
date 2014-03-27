@@ -58,6 +58,10 @@ for idx_vain = 1:N_vain
                 TE_gre = varargin{idx_vain+1};
             case {'dR2s_thr'}
                 dR2s_thr = varargin{idx_vain+1};
+            case {'phypo_thr'}
+                phypo_thr = varargin{idx_vain+1};
+            case {'intstd_thr'}
+                intstd_thr = varargin{idx_vain+1};
             case {'FuncName'}
                 FuncName = varargin{idx_vain+1};
         end
