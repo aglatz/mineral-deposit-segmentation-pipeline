@@ -17,6 +17,13 @@ function [Ret] = validate_raw(S, S_ref, S_base, F)
 % OUTPUTS: Ret - Structure containing the validation results.
 %
 
+% Tests:
+% S1=ones(3);S2=ones(3);validate_raw(S1, S2, [], [1 1 1]); => J=1
+% S1=ones(3);S2=zeros(3);validate_raw(S1, S2, [], [1 1 1]); => J=0
+% S1=eye(3);S2=zeros(3);validate_raw(S1, S2, [], [1 1 1]); => J=0
+% S1=eye(3);S2=ones(3);validate_raw(S1, S2, [], [1 1 1]); => J=1/3
+% S1=zeros(3);S2=zeros(3);validate_raw(S1, S2, [], [1 1 1]); => J=1
+
 SM = logical(S);
 SM_ref = logical(S_ref);
 
@@ -71,7 +78,11 @@ ConfMat(3, 3) = sum(ConfMat(3, 1:2));
 
 %-------------------------------------------------------------------------
 function Ret = get_accuracy(ConfMat)
-Ret = (ConfMat(1, 1) + ConfMat(2, 2))/(ConfMat(3, 3));
+if ~ConfMat(3, 3)
+	Ret = 1; % special case
+else
+    Ret = (ConfMat(1, 1) + ConfMat(2, 2))/(ConfMat(3, 3));
+end
 
 
 %-------------------------------------------------------------------------
@@ -86,7 +97,11 @@ Ret = ConfMat(2, 2) / ConfMat(2, 3);
 
 %-------------------------------------------------------------------------
 function Ret = get_jaccard(ConfMat)
-Ret = ConfMat(1, 1) / (ConfMat(3, 3) - ConfMat(2, 2));
+if ~ConfMat(3, 3)
+    Ret = 1; % special case
+else
+    Ret = ConfMat(1, 1) / (ConfMat(3, 3) - ConfMat(2, 2));
+end
 
 
 %-------------------------------------------------------------------------
@@ -98,14 +113,20 @@ Ret = ConfMat(1, 1) / ConfMat(3, 1);
 function Ret = get_rejprecision(ConfMat)
 Ret = ConfMat(2, 2) / ConfMat(3, 2);
 
+
 %-------------------------------------------------------------------------
 function Ret = get_dice(ConfMat)
 Ret = 2*get_jaccard(ConfMat)/(get_jaccard(ConfMat)+1);
 
+
 %-------------------------------------------------------------------------
 function Ret = get_kappa(ConfMat)
-po = (ConfMat(1, 1) + ConfMat(2, 2))/ConfMat(3, 3);
-pe = (ConfMat(3, 1)*ConfMat(1, 3))/ConfMat(3, 3).^2 + ...
-     (ConfMat(3, 2)*ConfMat(2, 3))/ConfMat(3, 3).^2;
-Ret = (po-pe)/(1-pe);
+if ~ConfMat(3, 3)
+    Ret = 1; % special case
+else
+    po = (ConfMat(1, 1) + ConfMat(2, 2))/ConfMat(3, 3);
+    pe = (ConfMat(3, 1)*ConfMat(1, 3))/ConfMat(3, 3).^2 + ...
+         (ConfMat(3, 2)*ConfMat(2, 3))/ConfMat(3, 3).^2;
+    Ret = (po-pe)/(1-pe);
+end
 
