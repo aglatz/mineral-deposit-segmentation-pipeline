@@ -6,7 +6,7 @@
 close all; clear all
 
 SubjectFile = 'subjects_98';
-Pfx = 'ad_t1w_mineral_thr14_roi';
+Pfx = 'ad_t1w_mineral_stdint';
 AdaptiveFlag = true;
 RoiLabelTable = {[13, 11, 12, 14]};
 N_cpus = 6;
@@ -28,7 +28,7 @@ for idx_rep = 1:N_rep
        
         DirName = num2str(idx_testset);
         mkdir(DirName);
-        IntvarP = 0.3:0.1:1; %12:0.5:16; %9:18; %0:0.1:0.9;
+        IntvarP = 0:0.1:1.5;
         J_mean = zeros(length(IntvarP), 1);
         out(idx_testset).J = cell(length(IntvarP), 1);
         for idx_intvarp = 1:length(IntvarP)
@@ -37,7 +37,10 @@ for idx_rep = 1:N_rep
                                               'ThreshFactor', [1 0], ...
                                               'AdaptiveFlag', AdaptiveFlag, ...
                                               'SaveMaskFlag', false, ...
-                                              'IntvarP', IntvarP(idx_intvarp));
+                                              'TE_gre', 15e-3, ...
+                                              'dR2s_thr', 0, ...
+                                              'phypo_thr', 0.1, ...
+                                              'intstd_thr', IntvarP(idx_intvarp));
             MatName = [DirName '/hu_' num2str(IntvarP(idx_intvarp)) '_' Pfx '.mat'];
             save(MatName, 'Ret', 'Subjects');
             [~, J] = load_matdata(MatName, 0);
@@ -67,7 +70,10 @@ for idx_rep = 1:N_rep
                                       'ReportName', 'class', ...
                                       'AdaptiveFlag', AdaptiveFlag, ...
                                       'SaveMaskFlag', true, ...
-                                      'IntvarP', out(idx_testset).IntvarPOpt);
+                                      'TE_gre', 15e-3, ...
+                                      'dR2s_thr', 0, ...
+                                      'phypo_thr', 0.1, ...
+                                      'intstd_thr', out(idx_testset).IntvarPOpt);
     end
 end
 
