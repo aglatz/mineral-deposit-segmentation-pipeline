@@ -285,10 +285,10 @@ I_thr(4) = -sqrt(C_ntis(2,2)*RDs(2))+I_ntis_mean(2); % Robust range
 I_thr(5) = +sqrt(C_ntis(2,2)*RDs(2))+I_ntis_mean(2);
 
 % Calculate delta delta R2 dash
-dR2s = -1/15e-3*log(I_thr(1)/I_ntis_mean(1));
-dR2 = -1/102.96e-3*log(I_thr(4)/I_ntis_mean(2));
-ddR2d = dR2s - dR2;
-fprintf('ddR2s=%0.3f...', ddR2d);
+% dR2s = -1/15e-3*log(I_thr(1)/I_ntis_mean(1));
+% dR2 = -1/102.96e-3*log(I_thr(4)/I_ntis_mean(2));
+% ddR2d = dR2s - dR2;
+% fprintf('ddR2s=%0.3f...', ddR2d);
 
 % Segment multifocal T2*w hypointensities
 Mat = [S_gre(SM_oli) S_t1w(SM_oli)];
