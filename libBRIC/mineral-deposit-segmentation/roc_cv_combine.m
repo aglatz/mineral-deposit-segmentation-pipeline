@@ -3,11 +3,11 @@ addpath ../../libBRIC/misc-matlab/
 close all; clear all; clc
 
 SubjectFile = 'subjects_98';
-Pfx = 'ad_t1w_mineral_thr14_roi'; % varies the T1w hypointensity factor
+Pfx = 'ad_t1w_mineral_stdint_noad'; % varies the T1w hypointensity factor
 AdaptiveFlag = true;
 RoiLabelTable = {[13, 11, 12, 14]};
 N_cpus = 6;
-Thr = 0.3:0.1:1; %12:0.5:16; %9:18;
+Thr = 0:0.1:1.5;
 N_thr = length(Thr);
 N_cv = 10;
 out = struct;
@@ -16,7 +16,7 @@ H2 = figure;
 Col = hsv(N_cv);
 J_mean = NaN(N_cv, N_thr);
 for idx_dir = 1:N_cv
-    if idx_dir == 6
+    if idx_dir == 9
         fprintf('');
     end
     
@@ -51,9 +51,15 @@ end
 % save(MatFileName, 'out');
 
 figure(H2);
-plot(Thr, quantile(J_mean, .5), 'k', 'LineWidth', 2);
-plot(Thr, quantile(J_mean, .75), '--k', 'LineWidth', 2);
-plot(Thr, quantile(J_mean, .25), '--k', 'LineWidth', 2);
-xlabel('\bf Cumulative probability');
+axis([0 1.6 0.295 0.705]);
+Avg=median([out.thr]);
+SD=iqr([out.thr])./ 1.349;
+plot([Avg-SD Avg-SD], [0.295 0.705], '--k', 'LineWidth', 1);
+plot([Avg+SD Avg+SD], [0.295 0.705], '--k', 'LineWidth', 1);
+plot([Avg Avg], [0.295 0.705], 'k', 'LineWidth', 2);
+%plot(Thr, quantile(J_mean, 1-.1587), '--k', 'LineWidth', 2);
+%plot(Thr, quantile(J_mean, .1587), '--k', 'LineWidth', 2);
+xlabel('\bf Local variance filter parameter');
 ylabel('\bf Jaccard index');
+set(gcf, 'color', 'white');
 
