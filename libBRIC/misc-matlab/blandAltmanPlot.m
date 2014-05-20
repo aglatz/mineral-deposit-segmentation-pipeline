@@ -5,8 +5,12 @@ function [idx_oli] = blandAltmanPlot(A,B, varargin)
 meanAB=(A+B)./2;
 if ~isempty(varargin)
     difff = varargin{1};
+    difff_min = 0;
+    difff_max = 1;
 else
     difff = (A-B)./meanAB;
+    difff_min = -2;
+    difff_max = +2;
 end
 
 % Remove NaNs
@@ -17,7 +21,7 @@ difff(M)=[];
 meanAB_log10 = log10(meanAB);
 
 % Plot scatter plut quantile regression lines
-[idx_oli] = plot_quantreg(meanAB_log10, difff);
+[idx_oli] = plot_quantreg(meanAB_log10, difff, difff_min, difff_max);
 
 % Annotate axis
 xtick = unique(round(get(gca, 'XTick')));
@@ -27,7 +31,7 @@ set(gca, 'XTickLabel', num2str(10.^(xtick')));
 
 xlabel('\bf Average volume in mm^3');
 if ~isempty(varargin)
-    ylim([-.05 1.2]);
+    ylim([-.05 1.05]);
 	ylabel('\bf Jaccard index');
 else
 	ylim([-2.1 2.1]);

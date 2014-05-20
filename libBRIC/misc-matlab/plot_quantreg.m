@@ -1,4 +1,4 @@
-function [idx_oli, p_med] = plot_quantreg(x_in, y_in)
+function [idx_oli, p_med] = plot_quantreg(x_in, y_in, y_min, y_max)
 % Transform data
 [x, idx_sorted] = sort(x_in(:));
 y = y_in(idx_sorted); y = y(:);
@@ -24,13 +24,19 @@ end
 M = y >= y_quant(:, end) | y <= y_quant(:, 1);
 idx_oli = idx_sorted(M);
 
+% limits
+for idx_q = 1:N_Q
+    y_quant(y_quant(:, idx_q) > y_max, idx_q) = NaN;
+    y_quant(y_quant(:, idx_q) < y_min, idx_q) = NaN;
+end
+
 % Plot data
 scatter(x(~M), y(~M), 20, 'k', 'filled');
 hold on;
 scatter(x(M), y(M), 20, '+r');
 
 % Plot mean
-plot(x, y_mean, '--k', 'linewidth', 1);
+% plot(x, y_mean, '--k', 'linewidth', 1);
 
 % Plot regression lines
 F = {':b', '--b', 'b', '--b', ':b'};
