@@ -1,6 +1,4 @@
-function [Ret] = segment_us_refine(Subject, RoiLabelTable, ReportName, ...
-                                   InterpFactor, ThreshFactor, AdaptiveFlag, ...
-                                   IntvarP)
+function [xopt] = segment_us_refine(Subjects, RoiLabelTable, N_cpus, AdaptiveFlag)
 % Function that finds the optimal 'ThreshFactor' (see segment_us())
 % by adjusting the factor to maximise the Jaccard index between
 % generated and reference mask.
@@ -12,31 +10,22 @@ function [Ret] = segment_us_refine(Subject, RoiLabelTable, ReportName, ...
 %                 optimized.
 %
 
-Ret = validate(Subject, 'FE_roi_mask', 'FE_roi_mask', [], [], 0);
-if Ret.Vol_ref > 0
-    % Get optimal factor
-    x0 = ThreshFactor(1);
-    options = optimset('fminsearch');
-    options = optimset(options, 'Display', 'iter');
-    xopt = fminsearch(@(x) optifun(x, Subject, RoiLabelTable, ...
-                      InterpFactor, AdaptiveFlag, IntvarP), x0, options);
-                         
-    % Get masks for best version
-    Ret = segment_us_single(Subject, RoiLabelTable, ReportName, ...
-                            InterpFactor, [xopt 0], AdaptiveFlag, IntvarP);
-    Ret.alpha_opt = xopt;
-else
-	% Get masks for best version
-    Ret = segment_us_single(Subject, RoiLabelTable, ReportName, ...
-                            InterpFactor, ThreshFactor, AdaptiveFlag, IntvarP);
-    Ret.alpha_opt = NaN;
-end
+% Get optimal factor
+intstd_thr_0 = 1;
+options = optimset('fminsearch');
+options = optimset(options, 'Display', 'iter');
+xopt = fminsearch(@(x) optifun(Subjects, RoiLabelTable, N_cpus, ...
+                  AdaptiveFlag, x), intstd_thr_0, options);
 
 
 %--------------------------------------------------------------------------
-function [F] = optifun(x, Subject, RoiLabelTable, InterpFactor, AdaptiveFlag, IntvarP)
-Ret = segment_us_single(Subject, RoiLabelTable, [], ...
-                        InterpFactor, [x 0], AdaptiveFlag, IntvarP, ...
-                        'SaveMaskFlag', false);
-F = 1 - Ret.Jaccard;
+function [F] = optifun(Subjects, RoiLabelTable, N_cpus, AdaptiveFlag, intstd_thr)
+[Ret] = segment_us_mp(Subjects, RoiLabelTable, N_cpus, ...
+                      'ThreshFactor', [1 0], 'AdaptiveFlag', AdaptiveFlag, ...
+                      'SaveMaskFlag', false, 'N_gre', 1, ...
+                      'CNR_thr', 0, 'phypo_thr', 0.1, 'intvar_thr', intstd_thr);
+F = 1 - quantile([Ret.Jaccard], .5);
+fd = fopen('/tmp/opt.txt', 'a');
+fprintf(fd, '%s thr=%0.3f 1-J=%0.3f\n', datestr(now), intstd_thr, F);
+fclose(fd);
 

@@ -1,9 +1,9 @@
 addpath ../../libBRIC/misc-matlab/
 
-close all; clear all; clc
+close all; %clear all; clc
 
 SubjectFile = 'subjects_98';
-Pfx = 'ad_t1w_mineral_stdint_noad'; % varies the T1w hypointensity factor
+Pfx = 'ad_t1w_mineral_stdint'; % varies the T1w hypointensity factor
 AdaptiveFlag = true;
 RoiLabelTable = {[13, 11, 12, 14]};
 N_cpus = 6;
@@ -27,24 +27,28 @@ for idx_dir = 1:N_cv
 
 	idx = find(J_mean(idx_dir, :) == max(J_mean(idx_dir, :)));
     [idx, len] = find_largemax(idx, '');
-    if mod(len, 2) == 0
-        idx = [idx-1, idx];
-    end
+%     if mod(len, 2) == 0
+%         idx = [idx-1, idx];
+%     end
 
     figure(H2); hold on; plot(Thr, J_mean(idx_dir, :), 'color', Col(idx_dir, :));
-    out(idx_dir).thr = mean(Thr(idx));
-    scatter(out(idx_dir).thr, mean(J_mean(idx_dir, idx)), 'k', 'filled');
+    out(idx_dir).thr = mean(Thr(idx)); 
+    out(idx_dir).J = (J_mean(idx_dir, idx)-J_mean(idx_dir, 1))./J_mean(idx_dir, 1);
+    scatter(out(idx_dir).thr, (J_mean(idx_dir, idx)), 'k', 'filled');
     
 %     SubjectFile_traintest = [SubjectFile '_' Pfx '_' num2str(idx_dir)];
 %     [out(idx_dir).Ret, out(idx_dir).Subjects] = ...
 %                     segment_us_mp([SubjectFile_traintest '.xls'], ...
 %                                   RoiLabelTable, N_cpus, ...
 %                                   'ThreshFactor', [1 0], ...
-%                                   'ReportName', 'class', ...
 %                                   'AdaptiveFlag', AdaptiveFlag, ...
 %                                   'SaveMaskFlag', true, ...
-%                                   'TE_gre', 15e-3, ...
-%                                   'dR2s_thr', out(idx_dir).thr);
+%                                   'ReportName', 'class', ...
+%                                   'N_gre', 1, ...
+%                                   'CNR_thr', 0, ...
+%                                   'phypo_thr', 0.1, ...
+%                                   'intvar_thr', out(idx_dir).thr);
+
 end
 
 % MatFileName = [SubjectFile '_' Pfx '.mat'];
