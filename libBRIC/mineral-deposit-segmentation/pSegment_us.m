@@ -25,26 +25,23 @@ end
 if exist('ReportName', 'var') <= 0 || isempty(ReportName)
     ReportName = [];
 end
-if exist('InterpFactor', 'var') <= 0 || isempty(InterpFactor)
-    InterpFactor = 1;
-end
 if exist('ThreshFactor', 'var') <= 0 || isempty(ThreshFactor)
     ThreshFactor = [1 0];
 end
 if exist('AdaptiveFlag', 'var') <= 0 || isempty(AdaptiveFlag)
     AdaptiveFlag = true;
 end
-if exist('TE_gre', 'var') <= 0 || isempty(TE_gre)
-    TE_gre = 15e-3;
+if exist('N_gre', 'var') <= 0 || isempty(N_gre)
+    N_gre = 1;
 end
-if exist('dR2s_thr', 'var') <= 0 || isempty(dR2s_thr)
-    dR2s_thr = 0;
+if exist('CNR_thr', 'var') <= 0 || isempty(CNR_thr)
+    CNR_thr = 0;
 end
 if exist('phypo_thr', 'var') <= 0 || isempty(phypo_thr)
     phypo_thr = 0.5;
 end
-if exist('intstd_thr', 'var') <= 0 || isempty(intstd_thr)
-    intstd_thr = 1;
+if exist('intvar_thr', 'var') <= 0 || isempty(intvar_thr)
+    intvar_thr = 1;
 end
 if exist('FuncName', 'var') <= 0 || isempty(FuncName)
     FuncName = 'segment_us_single';
@@ -71,9 +68,9 @@ for idx_j = 1:size(OverLoc, 1);
     fprintf('Subject: %s ...\n', Subject);
     
 	fh = str2func(FuncName);
-	Ret = fh(Subject, RoiLabelTable, ReportName, InterpFactor, ...
+	Ret = fh(Subject, RoiLabelTable, ReportName, ...
              ThreshFactor, AdaptiveFlag, ...
-             TE_gre, dR2s_thr, phypo_thr, intstd_thr);
+             N_gre, CNR_thr, phypo_thr, intvar_thr);
 	save(fullfile(Subject, 'Ret.mat'), 'Ret');
 end
 

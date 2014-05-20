@@ -25,9 +25,10 @@ function [RetAll, Subjects, Over] = segment_us_mp(SubjectFile, RoiLabelTable, ..
 %                                 intercept, for changing the threshold.
 %                  AdaptiveFlag - 'true' indicates that the adaptive
 %                                 thresholding method should be used.
-%                  TE_gre - Echo time of gradient echo volume.
-%                  dR2s_thr - R2* threshold for filtering connected
-%                             components.
+%                  N_gre - Estimated noise of T2*w volume
+%                  CNR_thr - contrast-to-noise ratio threshold
+%                  phypo_thr - T1w hypointensity ratio threshold
+%                  intvar_thr - T2*w intensity variance threshold
 % RETURNS: RetAll - A cell variable that contains limited mask statistics
 %                   and validation results if a reference standard mask
 %                   was found for the corresponding subject. See
@@ -46,22 +47,20 @@ for idx_vain = 1:N_vain
     arg_in = varargin{idx_vain};
     if ischar(arg_in) || isscalar(arg_in)
         switch arg_in
-            case {'InterpFactor'}
-                InterpFactor = varargin{idx_vain+1};
             case {'ReportName'}
                 ReportName = varargin{idx_vain+1};
             case {'ThreshFactor'}
                 ThreshFactor = varargin{idx_vain+1};
             case {'AdaptiveFlag'}
                 AdaptiveFlag = varargin{idx_vain+1};
-            case {'TE_gre'}
-                TE_gre = varargin{idx_vain+1};
-            case {'dR2s_thr'}
-                dR2s_thr = varargin{idx_vain+1};
+            case {'N_gre'}
+                N_gre = varargin{idx_vain+1};
+            case {'CNR_thr'}
+                CNR_thr = varargin{idx_vain+1};
             case {'phypo_thr'}
                 phypo_thr = varargin{idx_vain+1};
-            case {'intstd_thr'}
-                intstd_thr = varargin{idx_vain+1};
+            case {'intvar_thr'}
+                intvar_thr = varargin{idx_vain+1};
             case {'FuncName'}
                 FuncName = varargin{idx_vain+1};
         end

@@ -1,21 +1,18 @@
 function [Ret, CC] = segment_us_single(Subject, RoiLabelTable, ReportName, ...
-                                       InterpFactor, ThreshFactor, AdaptiveFlag, ...
-                                       TE_gre, dR2s_thr, phypo_thr, intstd_thr, ...
-                                       varargin)
+                                       ThreshFactor, AdaptiveFlag, N_gre, ...
+                                       CNR_thr, phypo_thr, intvar_thr, varargin)
 % This function expects three files in each subject directory:
 % - RO_mask: the masks with the regions of interests
-% - GRE_brain_restore: the GRE volume which was brain extracted
-%                      (not strictly necessary) and bias-field corrected.
-% - T1W_brain_restore: the T1W volume which was brain extracted
-%                      (not strictly necessary) and bias-field corrected
+% - GRE_brain_restore: the GRE volume
+% - T1W_brain_restore: the T1W volume
+% - FE_roi_mask (optional): a reference mask for T2*w hypointensities
 % It can generate following masks for the given subject unless the optional
 % argument 'SaveMaskFlag' is 'false':
 % - NonTis_mask: A mask selecting what appears to be not normal tissue
 % - NormTis_mask: A mask selecting the normal-appearing tissue
 % - T2swHypo_mask: A mask selecting T2sw hypointensities (subset of
 %                  NonTis_mask)
-% It can save the intermediate plots to a file if 'ReportName' is
-% a valide file name.
+% It can save the intermediate plots to a file if 'ReportName' is valid.
 % 
 % INPUTS: Subject - the subject directory containing at least RO_mask,
 %                   GRE_brain_restore, T1W_brain_restore
@@ -25,16 +22,16 @@ function [Ret, CC] = segment_us_single(Subject, RoiLabelTable, ReportName, ...
 %                         estimate the thresholds. All other ROI labels of
 %                         the same vector should be segmented with the same
 %                         threshold.
-%         InterpFactor - Controls FFT interpolation for greyscale volumes
-%                        and nearest neighbour interpolation for mask
-%                        volumes. A 'InterpFactor'=1 means no
-%                        interpolation.
+%         ReportName - A valid file name or []; If file name is valid the
+%                      generated plots are saved.
 %         ThreshFactor - T2*w threshold refinement parameters (see
 %                        segment_us())
 %         AdaptiveFlag - If set to 'true' the T2*w is refined with
 %                        an adaptive method
-%         TE_gre - Echo time of gradient echo volume.
-%         dR2s_thr - R2* threshold for filtering connected components.
+%         N_gre - Estimated noise of T2*w magnitude volume
+%         CNR_thr - contrast-to-noise ratio threshold
+%         phypo_thr - T1w hypointensity ratio threshold
+%         intvar_thr - T2*w intensity variance threshold
 % OPTIONAL INPUTS: SaveMaskFlag - Controls the saving of the generated
 %                                 masks. Default is 'true'.
 % OUTPUT: The structure from validate_raw() plus additional element
@@ -94,10 +91,10 @@ S_roi = load_series(RoiFile, roi_nifti_sliceno(Roi, []));
 try
     FeName = 'FE_roi_mask';
     S_ref_orig = load_series(fullfile(Subject, FeName), roi_nifti_sliceno(Roi, []));
-%     S_ref_orig(S_ref_orig == 50) = 11;
-%     S_ref_orig(S_ref_orig == 51) = 12;
-%     S_ref_orig(S_ref_orig == 52) = 13;
-%     S_ref_orig(S_ref_orig == 55) = 14;
+    S_ref_orig(S_ref_orig == 50) = 11;
+    S_ref_orig(S_ref_orig == 51) = 12;
+    S_ref_orig(S_ref_orig == 52) = 13;
+    S_ref_orig(S_ref_orig == 55) = 14;
     S_ref = zeros(size(S_ref_orig), class(S_ref_orig));
     N_iter = length(RoiLabelTable);
     for idx_iter = 1:N_iter
@@ -140,10 +137,10 @@ for idx_iter = 1:N_iter
     Fit{idx_iter} = Ret.Fit;
 end
 
-% CC Filtering - TODO: pass input variables from main function
-[S_hypos, S_hypos_hypo, S_hypos_hyper, App] = cc_filter(S_gre, TE_gre, ...
-    S_t1w, [], [], S_roi, logical(S_hypos), S_ntis, [I_thr{:}]', ...
-    dR2s_thr, phypo_thr, intstd_thr);
+% CC Filtering
+[S_hypos, S_hypos_hypo, S_hypos_hyper, App] = cc_filter(S_gre, S_t1w, ...
+    N_gre, S_roi, logical(S_hypos), S_ntis, [I_thr{:}]', ...
+    CNR_thr, phypo_thr, intvar_thr);
 
 % Summary plot
 H = figure; %create_ps_figure;
@@ -202,11 +199,10 @@ end
 Ret.Input.Subject = Subject;
 Ret.Input.RoiLabelTable = RoiLabelTable;
 Ret.Input.ReportName = ReportName;
-Ret.Input.InterpFactor = InterpFactor;
 Ret.Input.ThreshFactor = ThreshFactor;
 Ret.Input.AdaptiveFlag = AdaptiveFlag;
-Ret.Input.TE_gre = TE_gre;
-Ret.Input.dR2s_thr = dR2s_thr;
+Ret.Input.N_gre = N_gre;
+Ret.Input.CNR_thr = CNR_thr;
 
 % Add accumulated results to output
 Ret.I_thr = I_thr;
