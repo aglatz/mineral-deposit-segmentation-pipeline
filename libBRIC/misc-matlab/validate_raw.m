@@ -70,7 +70,7 @@ ConfMat(1, 2) = get_volume((SM_ref & SM_base) & ~(SM & SM_ref), F); %FN
 ConfMat(2, 1) = get_volume((SM & SM_base) & ~(SM & SM_ref), F); %FP
 ConfMat(3, 1:2) = sum(ConfMat(1:2, 1:2), 1);
 ConfMat(1:2, 3) = sum(ConfMat(1:2, 1:2), 2);
-if sum(ConfMat(3, 1:2)) ~= sum(ConfMat(1:2, 3))
+if (sum(ConfMat(3, 1:2)) - sum(ConfMat(1:2, 3))) > prod(F)
 	error('Confusion matrix inconsitency');
 end
 ConfMat(3, 3) = sum(ConfMat(3, 1:2));
