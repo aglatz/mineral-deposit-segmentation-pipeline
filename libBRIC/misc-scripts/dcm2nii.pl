@@ -1,9 +1,82 @@
 #!/usr/bin/perl
+# Requires: dcmtk and fsl utils, as well as dcm2nii
 
 use strict;
 use warnings;
 use POSIX;
-use List::MoreUtils qw/ uniq /;
+
+### Subroutines ###############################################################
+
+sub uniq
+{
+	my %seen;
+	return grep {!$seen{$_}++} @_;
+}
+
+sub generate_nifti
+{
+	my $type = shift;
+	my $echotime = shift;
+	my $indir = shift;
+	my $outdir = shift;
+	my $file;
+	my @files;
+	for $file (@_) {
+		push @files, join('/', $indir, $file);
+	}
+
+	# Sanity checking
+	my @echotimes;
+	my @types;
+	my $cmd = "dcmdump --search 0043,102f --search EchoTime @files |";
+	open(ES, $cmd) || die("Error: checking dicom files!");
+	while(my $line = <ES>) {
+		if( $line =~ /.*\[(.*)\].*EchoTime/ ) {
+			push @echotimes, $1;
+		}
+		if( $line =~ /.*SS (\d).*RawDataType/ ) {
+			push @types, $1;
+		}
+	}
+	close(ES);
+	@echotimes = uniq @echotimes;
+	@types = uniq @types;
+	#print "@echotimes\n";
+	#print "$#echotimes $echotimes[0] $echotime\n";
+	#print "@types\n";
+	#print "$#types $types[0] $type\n";
+	if ($#echotimes != 0 || 
+	    $echotimes[0]*1000 != $echotime ||
+		$#types != 0) {
+		die("Error: Inconsitent dicom files!");
+	}
+
+	# Generate shell script
+	my $script_name = $outdir . sprintf("/dcm2nii_%d_%d.sh", $type, $echotime);
+	printf("Info: Generating nifti %s with %d slices...", 
+			$script_name, $#files+1);
+	open(FH, ">" . $script_name) 
+		|| die("Error: Cannot create file $script_name");
+	print FH "dcm2nii -o $outdir -a y -v n -e n -d n -i n @files";
+	print FH " &> $script_name.log\n";
+	print FH "NAME=\`ls -alrt $outdir/*.nii.gz | tail -n 1 | ",
+				"sed -n \'s/.* \\\(.*\\\)\.nii\.gz/\\1/p\'\`\n";
+	print FH "OUT=S_$type\_$echotime.nii.gz\n";
+	print FH "mv \$NAME.nii.gz $outdir/\$OUT\n";
+	print FH "echo $outdir/\$OUT\nexit 0\n";
+	close(FH);
+
+	# Execute script
+	chmod 0755, $script_name;
+	my $out = `$script_name`; chomp($out);
+	die("Error: Could not create nifti file $out!") if (!-e $out || -z $out);
+	system("rm $script_name $script_name.log");
+	print("done.\n");
+	return $out;
+}
+
+
+### Main #####################################################################
 
 die("\nUsage: dcm2nii.pl <dcm dir> <dir>\n") if( $#ARGV < 1 );
 
@@ -124,69 +197,5 @@ for(my $echo_idx = 0; $echo_idx <= $#echotimes; $echo_idx = $echo_idx+1) {
 }
 
 exit 0;
-
-### Subroutines ###############################################################
-
-sub generate_nifti
-{
-	my $type = shift;
-	my $echotime = shift;
-	my $indir = shift;
-	my $outdir = shift;
-	my @files;	
-	for $file (@_) {
-		push @files, join('/', $indir, $file);
-	}
-
-	# Sanity checking
-	my @echotimes;
-	my @types;
-	my $cmd = "dcmdump --search 0043,102f --search EchoTime @files |";
-	open(ES, $cmd) || die("Error: checking dicom files!");
-	while(my $line = <ES>) {
-		if( $line =~ /.*\[(.*)\].*EchoTime/ ) {
-			push @echotimes, $1;
-		}
-		if( $line =~ /.*SS (\d).*RawDataType/ ) {
-			push @types, $1;
-		}
-	}
-	close(ES);
-	@echotimes = uniq @echotimes;
-	@types = uniq @types;
-	#print "@echotimes\n";
-	#print "$#echotimes $echotimes[0] $echotime\n";
-	#print "@types\n";
-	#print "$#types $types[0] $type\n";
-	if ($#echotimes != 0 || 
-	    $echotimes[0]*1000 != $echotime ||
-		$#types != 0 ||
-		$types[0] != $type) {
-		die("Error: Inconsitent dicom files!");
-	}
-
-	# Generate shell script
-	my $script_name = $outdir . sprintf("/dcm2nii_%d_%d.sh", $type, $echotime);
-	printf("Info: Generating nifti %s with %d slices...", 
-			$script_name, $#files+1);
-	open(FH, ">" . $script_name) 
-		|| die("Error: Cannot create file $script_name");
-	print FH "dcm2nii -o $outdir -a y -v n -e n -d n -i n @files";
-	print FH " &> $script_name.log\n";
-	print FH "NAME=\`ls -alrt $outdir/*.nii.gz | tail -n 1 | ",
-				"sed -n \'s/.* \\\(.*\\\)\.nii\.gz/\\1/p\'\`\n";
-	print FH "OUT=S_$type\_$echotime.nii.gz\n";
-	print FH "mv \$NAME.nii.gz $outdir/\$OUT\n";
-	print FH "echo $outdir/\$OUT\nexit 0\n";
-	close(FH);
-
-	# Execute script
-	chmod 0755, $script_name;
-	my $out = `$script_name`; chomp($out);
-	die("Error: Could not create nifti file $out!") if (!-e $out || -z $out);
-	system("rm $script_name $script_name.log");
-	print("done.\n");
-	return $out;
-}
 
 
