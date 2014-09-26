@@ -13,8 +13,7 @@ Requirements:
 - LIBRA: a Matlab library for robust analysis [16]
 - Parallel Matlab Toolbox [17]
 
-How to test just the segmentation method (MATLAB script without the pipeline)?
-To demonstrate how segmentation method works a MATLAB script 'segment_us_phantom.m' is provided in ${GITROOTDIR}/libBRIC/mineral-deposit-segmentation/test/ that segments the lesions of our lesion phantom. The structural T1- and T2*-weighted volumes of the lesion phantom can be found in ${GITROOTDIR}/libBRIC/mineral-deposit-segmentation/lesionphantom, where the script will place its output as well.
+Unit test of the segmentation method: The structural T1- and T2*-weighted volumes of an MRI phantom containing different kinds of mineral deposits can be found in ${GITROOTDIR}/libBRIC/mineral-deposit-segmentation/lesionphantom, where the script will place its output as well.
 
 Steps for running the script:
 - cd /to/some/new/directory
