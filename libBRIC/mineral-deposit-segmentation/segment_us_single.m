@@ -1,6 +1,6 @@
 function [Ret, CC] = segment_us_single(Subject, RoiLabelTable, ReportName, ...
                                        ThreshFactor, AdaptiveFlag, N_gre, ...
-                                       CNR_thr, phypo_thr, intvar_thr, varargin)
+                                       CNR_thr, intvar_thr, varargin)
 % This function expects three files in each subject directory:
 % - RO_mask: the masks with the regions of interests
 % - GRE_brain_restore: the GRE volume
@@ -30,7 +30,6 @@ function [Ret, CC] = segment_us_single(Subject, RoiLabelTable, ReportName, ...
 %                        an adaptive method
 %         N_gre - Estimated noise of T2*w magnitude volume
 %         CNR_thr - contrast-to-noise ratio threshold
-%         phypo_thr - T1w hypointensity ratio threshold
 %         intvar_thr - T2*w intensity variance threshold
 % OPTIONAL INPUTS: SaveMaskFlag - Controls the saving of the generated
 %                                 masks. Default is 'true'.
@@ -91,10 +90,10 @@ S_roi = load_series(RoiFile, roi_nifti_sliceno(Roi, []));
 try
     FeName = 'FE_roi_mask';
     S_ref_orig = load_series(fullfile(Subject, FeName), roi_nifti_sliceno(Roi, []));
-    S_ref_orig(S_ref_orig == 50) = 11;
-    S_ref_orig(S_ref_orig == 51) = 12;
-    S_ref_orig(S_ref_orig == 52) = 13;
-    S_ref_orig(S_ref_orig == 55) = 14;
+%     S_ref_orig(S_ref_orig == 50) = 11;
+%     S_ref_orig(S_ref_orig == 51) = 12;
+%     S_ref_orig(S_ref_orig == 52) = 13;
+%     S_ref_orig(S_ref_orig == 55) = 14;
     S_ref = zeros(size(S_ref_orig), class(S_ref_orig));
     N_iter = length(RoiLabelTable);
     for idx_iter = 1:N_iter
@@ -113,14 +112,21 @@ S_gre = double(load_series(fullfile(Subject, T2swName), roi_nifti_sliceno(Roi, [
 T1wName = 'T1W_brain_restore';
 S_t1w = double(load_series(fullfile(Subject, T1wName), roi_nifti_sliceno(Roi, [])));
 
+% Read Noise
+fd = fopen(fullfile(Subject, 'GRE_restore_noise.txt'), 'r');
+if fd ~= -1
+    N_gre = double(fscanf(fd, '%f'));
+    fclose(fd);
+end
+
 % Initialize output variables and start segmentation
 N_iter = length(RoiLabelTable);
-S_hypos = zeros(size(S_roi), class(S_roi));
+S_hypos_thr = zeros(size(S_roi), class(S_roi));
 S_nontis = zeros(size(S_roi), class(S_roi));
 S_ntis = zeros(size(S_roi), class(S_roi));
 I_ntis_means = cell(N_iter, 1);
 I_thr = cell(N_iter, 1);
-Fit = cell(N_iter, 1);
+CNR_oli = zeros(N_iter, 1);
 for idx_iter = 1:N_iter
     Labs = RoiLabelTable{idx_iter};
 
@@ -129,18 +135,18 @@ for idx_iter = 1:N_iter
                      'Out_name', ReportFile, 'P_thr', ThreshFactor);
 
     % Accumulate results
-    S_hypos = S_hypos + Ret.S_hypos;
+    S_hypos_thr = S_hypos_thr + Ret.S_hypos;
     S_nontis = S_nontis + Ret.S_nontis;
     S_ntis = S_ntis + Ret.S_ntis;
     I_ntis_means{idx_iter} = Ret.I_ntis_means';
     I_thr{idx_iter} = Ret.I_thr';
-    Fit{idx_iter} = Ret.Fit;
+    CNR_oli(idx_iter) = abs(Ret.I_thr(1, 1)-Ret.I_ntis_means(1, 1))/N_gre;
 end
 
 % CC Filtering
-[S_hypos, S_hypos_hypo, S_hypos_hyper, App] = cc_filter(S_gre, S_t1w, ...
-    N_gre, S_roi, logical(S_hypos), S_ntis, [I_thr{:}]', ...
-    CNR_thr, phypo_thr, intvar_thr);
+[S_hypos, S_hypos_hypo, S_hypos_hyper, CC_app] = cc_filter(S_gre, S_t1w, ...
+    N_gre, S_roi, logical(S_hypos_thr), S_ntis, [I_thr{:}]', ...
+    CNR_thr, intvar_thr);
 
 % Summary plot
 H = figure; %create_ps_figure;
@@ -188,12 +194,32 @@ end
 % Validate
 NII = load_series(RoiFile, 0);
 F = NII.hdr.dime.pixdim(2:4);
-if ~isempty(S_ref)
-	Ret = validate_raw(S_hypos, S_ref, [], F);
-else
-	S_ref = zeros(size(S_hypos));
-    Ret = validate_raw(S_hypos, S_ref, [], F);
+if isempty(S_ref)
+    S_ref = zeros(size(S_hypos));
 end
+Ret = validate_raw(S_hypos, S_ref, [], F);
+Ret.thr = validate_raw(S_hypos_thr, S_ref, [], F);
+
+% Validate hand-edited masks
+% try
+%     FeName = 'FE_roi_mask_edited';
+%     S_ref_orig = load_series(fullfile(Subject, FeName), roi_nifti_sliceno(Roi, []));
+%     S_ref_orig(S_ref_orig == 50) = 11;
+%     S_ref_orig(S_ref_orig == 51) = 12;
+%     S_ref_orig(S_ref_orig == 52) = 13;
+%     S_ref_orig(S_ref_orig == 55) = 14;
+%     S_ref_edit = zeros(size(S_ref_orig), class(S_ref_orig));
+%     N_iter = length(RoiLabelTable);
+%     for idx_iter = 1:N_iter
+%         Labs = RoiLabelTable{idx_iter};
+%         for lab = Labs
+%             S_ref_edit(S_ref_orig == lab) = lab;
+%         end
+%     end
+% catch
+%     S_ref_edit = S_hypos;
+% end
+% Ret.edit = validate_raw(S_ref_edit, S_ref, [], F);
 
 % Add input parameters to output
 Ret.Input.Subject = Subject;
@@ -203,10 +229,11 @@ Ret.Input.ThreshFactor = ThreshFactor;
 Ret.Input.AdaptiveFlag = AdaptiveFlag;
 Ret.Input.N_gre = N_gre;
 Ret.Input.CNR_thr = CNR_thr;
+Ret.Input.intvar_thr = intvar_thr;
 
 % Add accumulated results to output
 Ret.I_thr = I_thr;
 Ret.I_ntis_means = I_ntis_means;
-Ret.Fit = Fit;
-Ret.App = App;
+Ret.CNR_oli = CNR_oli;
+Ret.CC_app = CC_app;
 

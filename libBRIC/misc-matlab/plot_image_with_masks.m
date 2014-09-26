@@ -21,7 +21,9 @@ if ~isempty(M3)
     nbit = 4;
     I_mask = uint8(M3)*nbit + I_mask;
 end
-map = [ [0 0 0]; hsv(2^nbit-1) ]; % map contains all colors of rgb image
+N_col = (2^nbit-1);
+Col = hsv(N_col+1); % +1 so we dont hit r/g/b
+map = [ [0 0 0]; Col(2:N_col+1, :) ]; % map contains all colors of rgb image
 [I_rgb, tmp2] = level2rgb(I_mask, map); clear tmp2;
 I_rgb = overlay_mask(I, I_rgb, I_max); % Assigns each level in I_ind a
                                        % different color

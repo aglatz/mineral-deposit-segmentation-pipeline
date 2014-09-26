@@ -33,7 +33,9 @@ Lab = unique(L)';
 Lab = Lab(2:end); % Exclude background
 N_lab = length(Lab);
 Lab_roi = unique(S_roi)';
-Lab_roi = Lab_roi(2:end); % Exclude background
+if length(Lab_roi) > 1
+    Lab_roi = Lab_roi(2:end); % Exclude background
+end
 N_lab_roi = length(Lab_roi);
 SM_roi = logical(S_roi);
 Loc = ones(size(Lab)) .* -1; % -1 means outside ROI

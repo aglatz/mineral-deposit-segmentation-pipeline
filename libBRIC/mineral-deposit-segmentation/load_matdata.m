@@ -1,4 +1,4 @@
-function [Subjects, J, D, V, V_ref, Sens, Spec] = load_matdata(MatName, varargin)
+function [Subjects, J, J0, D, V, V_ref, CNR, q] = load_matdata(MatName)
 load(MatName);
 if exist('out', 'var')
     Ret = [out.Ret];
@@ -11,13 +11,20 @@ if exist('out', 'var')
     end
 end
 
-if nargin > 1 && varargin{1}
-    Ret = [Ret.CA];
+E = [Ret.edit];
+J = [E.Jaccard];
+if isfield(Ret, 'thr')
+    Tmp = [Ret.thr];
+    J0 = [Tmp.Jaccard];
 end
-
-J = [Ret.Jaccard];
-D = [Ret.Dice];
-V = [Ret.Vol];
-V_ref = [Ret.Vol_ref];
-Sens = [Ret.Sensitivity];
-Spec = [Ret.Specificity];
+D = [E.Dice];
+V = [E.Vol];
+V_ref = [E.Vol_ref];
+if isfield(Ret, 'CNR_oli')
+    CNR = [Ret.CNR_oli];
+    Input = [Ret.Input];
+    q = [Input.intvar_thr];
+else
+    CNR = NaN(size(J));
+    q = NaN(size(J));
+end

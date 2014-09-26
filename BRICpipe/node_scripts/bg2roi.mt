@@ -9,7 +9,16 @@ for i = ...
 							 % [13 12 11 10] % L
 							 % [52 51 50 49] % R
 	if i == 13 || i == 52
-		SE = strel('disk', 6);
+        SE_tmp = strel('disk', 6);
+        SM_tmp = SE_tmp.getnhood;
+		% Modify SE so it just erodes towards the centre of the brain
+        switch i
+            case 52
+                SM_tmp(1:(end+1)/2, 1:end) = false;
+            case 13
+                SM_tmp((end+1)/2:end, 1:end) = false;
+        end
+        SE = strel(SM_tmp);
 		SM_tmp = logical(imdilate(SM_basgang == i, SE));
 		% New regions are called 14 and 55
 		if i == 13
