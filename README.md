@@ -5,17 +5,22 @@ A pipeline for segmenting mineral deposits on clinical magnetic resonance imagin
 
 The pipeline was originally developed at the Brain Imaging Research Centre [5] as part of a PhD project supported by SINAPSE/Spirit [6] on Red Hat Enterprise Linux 5 [7] and Matlab 2011b [8].
 
-Requirements:
-- Recent Linux distribution (e.g. Neurodebian [9]) with Bash [10] and Perl [11] and common utilities, such as make and rsync. 
-- FMRIB FSL library [12]
-- N4 intensity inhomogeneity correction tool [13] e.g. from Slicer3 [14]
+Requirements for the main processing pipeline:
 - Tools for writing and reading NIfTI and ANALYZE image in MATLAB [15]
 - LIBRA: a Matlab library for robust analysis [16]
+
+Optional requirements to enable parallel processing of the imaging data
 - Parallel Matlab Toolbox [17]
 
-Unit test of the segmentation method: The structural T1- and T2*-weighted volumes of an MRI phantom containing different kinds of mineral deposits can be found in ${GITROOTDIR}/libBRIC/mineral-deposit-segmentation/lesionphantom, where the script will place its output as well.
+Optional requirements for the preprocessing pipeline:
+- Recent Linux distribution (e.g. Neurodebian [9]) with Bash [10], Perl [11], make and rsync. 
+- FMRIB FSL library [12]
+- N4 intensity inhomogeneity correction tool [13] e.g. from Slicer3 [14]
 
-Steps for running the script:
+Unit test of the segmentation method:
+Structural T1- and T2*-weighted volumes of an MRI phantom containing different kinds of mineral deposits can be found in ${GITROOTDIR}/libBRIC/mineral-deposit-segmentation/lesionphantom, where the script will place its output as well. The following steps are detailed instructions for Linux. However, the software can also be tested under MS Windows by downloading the zip archive of the software (see links on the top left), and viewing the results with a Nifti viewer for MS Windows, such as Mango, and ghostview for MS Windows.
+
+Steps for running the main processing pipeline on Linux:
 - cd /to/some/new/directory
 - download and extract NIFTI[15] and LIBRA[16] toolboxes for MATLAB
 - git clone git@github.com:aglatz/mineral-deposit-segmentation-pipeline.git
@@ -26,6 +31,8 @@ Steps for running the script:
 * addpath('LIBRA/'); % include LIBRA toolbox functions
 * RoiLabelTable={1,2,3,4,5,6,7,8,9,10}; % define ROI labes of interest
 * [Ret] = segment_us_single('lesionphantom', RoiLabelTable, 'class', [1 0], 1, 1, 0, 0.1, 0); % Run segmentation on the lesion phantom volumes
+
+Steps for viewing the generated output on Linux:
 - cd lesionphantom
 - fslview -m single GRE_restore.nii.gz T1W_restore.nii.gz NonTis_mask.nii.gz NormTis_mask.nii.gz T2swHypo_mask.nii.gz # to view the masks
 - ../misc-scripts/ps2pdfAll.sh # converts the *.ps files into *.pdf files
@@ -56,7 +63,7 @@ References:
 [12] http://fsl.fmrib.ox.ac.uk/fsl
 [13] http://www.insight-journal.org/browse/publication/640
 [14] http://www.slicer.org/
-[15] http://www.rotman-baycrest.on.ca/~jimmy/NIFTI/
+[15] http://www.mathworks.co.uk/matlabcentral/fileexchange/8797-tools-for-nifti-and-analyze-image
 [16] http://wis.kuleuven.be/stat/robust/LIBRA/LIBRA-home
 [17] http://www.ll.mit.edu/mission/isr/pmatlab/pmatlab.html
 
