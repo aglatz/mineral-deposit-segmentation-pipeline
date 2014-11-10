@@ -215,7 +215,8 @@ ylabel('\bf Occurrence');
 
 % Test for equal population
 [H, P_fit] = kstest2(MD_ntis_oli_ref, B);
-title(sprintf('N_total=%d, N_norm=%d, H =%d, Fit=%0.3f', sum(SM_voi(:)), sum(SM_ntis(:)), H, P_fit));
+%[P_fit, H] = ranksum(MD_ntis_oli_ref, B);
+title(sprintf('N_total=%d, N_norm=%d, kstest2={H=%d, P=%0.3f}', sum(SM_voi(:)), sum(SM_ntis(:)), H, P_fit));
 
 
 %% Plot intensity distribution
@@ -235,6 +236,10 @@ if ~isempty(Thr)
     end
 end
 vline(DistMean, 'b', '');
+% Bowley skewness
+Q = quantile(S(SM_voi), [.25 .5 .75]);
+Skew = (Q(1)-2*Q(2)+Q(3))/(Q(3)-Q(1));
+title(sprintf('IQR=%0.3f skew=%0.3f', (Q(3)-Q(1))/Q(2), Skew));
 
 
 %% Plot mahalanobis distance against sqrt of chi2 distribution
@@ -275,7 +280,7 @@ if isempty(I_thr)
     % Calculate GRE threshold with refined RD
     I_gre_min = -sqrt(C_ntis(1,1)*RDs(2))+I_ntis_mean(1);
     I_thr(1) = polyval(P_thr, I_gre_min);
-    fprintf('Thr=%0.3f(%0.3f)...', I_thr, I_gre_min);
+    fprintf('Thr=%0.3f(diff=%0.3f)...', I_thr, abs(I_thr(1)-I_ntis_mean(1)));
 end
 
 % Calculate T1W thresholds
@@ -294,46 +299,7 @@ I_thr(5) = +sqrt(C_ntis(2,2)*RDs(2))+I_ntis_mean(2);
 Mat = [S_gre(SM_oli) S_t1w(SM_oli)];
 SM_hypo = SM_oli;
 SM_hypo(SM_oli) = Mat(:, 1) < I_thr(1); % Apply GRE threshold
-fprintf('T2*w hypos: %d.\n', sum(SM_hypo(:)));
-
-
-%% Split normal and outlier intensities
-function [SM_oli, SM_ntis, RDs] = ...
-    get_normal_outliers(S_gre, S_t1w, SM_voi, I_ntis_mean, C_ntis, adaptive_flag)
-
-Mat = [S_gre(SM_voi) S_t1w(SM_voi)];
-
-% Get robust distances of selected mode
-RD = mahalanobis(Mat, I_ntis_mean, 'cov', C_ntis);
-delta = chi2inv(0.975, size(Mat, 2)); % Only simulation values for 97.5%
-if adaptive_flag
-    % Find outliers according to Filzmoser, Reimann, Garrett (2003).
-    [Gn, u] = ecdf(RD);
-    G = chi2cdf(u, size(Mat, 2));
-    dG = G - Gn;
-    pn = max(dG(u >= delta & dG >= 0));
-    an = 0;
-    if ~isempty(pn)
-        pcrit = (0.24 - 0.003 * size(Mat, 2))/sqrt(size(Mat, 1));
-        if pn > pcrit
-            an = pn;
-        end    
-    end
-    RD_cutoff = u(find(Gn > (1-an), 1));
-    if isempty(RD_cutoff)
-        RD_cutoff = max(RD);
-    end
-else
-    RD_cutoff = delta;
-end
-RDs = [delta RD_cutoff];
-
-% Thresholding
-M = RD <= RD_cutoff;
-SM_ntis = SM_voi;
-SM_ntis(SM_voi) = M;
-SM_oli = SM_voi;
-SM_oli(SM_voi) = ~M;
+fprintf('T2*w hypos: %d(diffmin=%0.3f).\n', sum(SM_hypo(:)), abs(max(S_gre(SM_hypo))-I_ntis_mean(1)));
 
 
 

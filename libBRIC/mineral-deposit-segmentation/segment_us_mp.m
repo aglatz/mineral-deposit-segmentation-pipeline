@@ -27,7 +27,6 @@ function [RetAll, Subjects, Over] = segment_us_mp(SubjectFile, RoiLabelTable, ..
 %                                 thresholding method should be used.
 %                  N_gre - Estimated noise of T2*w volume
 %                  CNR_thr - contrast-to-noise ratio threshold
-%                  phypo_thr - T1w hypointensity ratio threshold
 %                  intvar_thr - T2*w intensity variance threshold
 % RETURNS: RetAll - A cell variable that contains limited mask statistics
 %                   and validation results if a reference standard mask
@@ -57,8 +56,6 @@ for idx_vain = 1:N_vain
                 N_gre = varargin{idx_vain+1};
             case {'CNR_thr'}
                 CNR_thr = varargin{idx_vain+1};
-            case {'phypo_thr'}
-                phypo_thr = varargin{idx_vain+1};
             case {'intvar_thr'}
                 intvar_thr = varargin{idx_vain+1};
             case {'FuncName'}

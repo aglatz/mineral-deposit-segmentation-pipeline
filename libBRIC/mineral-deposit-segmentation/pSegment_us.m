@@ -37,9 +37,6 @@ end
 if exist('CNR_thr', 'var') <= 0 || isempty(CNR_thr)
     CNR_thr = 0;
 end
-if exist('phypo_thr', 'var') <= 0 || isempty(phypo_thr)
-    phypo_thr = 0.5;
-end
 if exist('intvar_thr', 'var') <= 0 || isempty(intvar_thr)
     intvar_thr = 1;
 end
@@ -70,7 +67,7 @@ for idx_j = 1:size(OverLoc, 1);
 	fh = str2func(FuncName);
 	Ret = fh(Subject, RoiLabelTable, ReportName, ...
              ThreshFactor, AdaptiveFlag, ...
-             N_gre, CNR_thr, phypo_thr, intvar_thr);
+             N_gre, CNR_thr, intvar_thr);
 	save(fullfile(Subject, 'Ret.mat'), 'Ret');
 end
 
