@@ -57,11 +57,12 @@ sub generate_nifti
 			$script_name, $#files+1);
 	open(FH, ">" . $script_name) 
 		|| die("Error: Cannot create file $script_name");
-	print FH "dcm2nii -o $outdir -a y -v n -e n -d n -i n @files";
+	print FH "dcm2nii -o $outdir -a y -v n -e n -d n -i n -r n @files";
 	print FH " &> $script_name.log\n";
 	print FH "NAME=\`ls -alrt $outdir/*.nii.gz | tail -n 1 | ",
 				"sed -n \'s/.* \\\(.*\\\)\.nii\.gz/\\1/p\'\`\n";
 	print FH "OUT=S_$type\_$echotime.nii.gz\n";
+	print FH "sleep 1\n";
 	print FH "mv \$NAME.nii.gz $outdir/\$OUT\n";
 	print FH "echo $outdir/\$OUT\nexit 0\n";
 	close(FH);
@@ -160,17 +161,18 @@ system($cmd);
 
 # Calculate number of filetypes
 my $types;
+my $types_float;
 if ( defined($ftypes) ) {
 	$types = $ftypes;
 } else {
-	my $types_float = ($#dcmfiles+1) / (($#echotimes+1) * ($#slicelocations+1));
+	$types_float = ($#dcmfiles+1) / (($#echotimes+1) * ($#slicelocations+1));
 	$types = sprintf("%0.0f", $types_float);
 	if ( abs($types_float - $types) > 0.1 ) {
 		print "$#echotimes $#slicelocations $types_float $types\n";
 		die("Error: Found an inconsitent number of files!");
 	}
 }
-printf "Info: Found %d image types\n\n", $types;
+printf "Info: Found %0.1f image types\n\n", $types_float;
 
 # Generate Nifti files	
 for(my $echo_idx = 0; $echo_idx <= $#echotimes; $echo_idx = $echo_idx+1) {
