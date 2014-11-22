@@ -78,7 +78,7 @@ SEDEXP="s${SC}\${*TMPSCRIPT_NAME}*${SC}${TMPSCRIPT_NAME}${SC}g;$SEDEXP"
 while [ $ARG_CNT -le $# ]
 do
 	ARG_NAME="ARG_$((ARG_CNT-2))";
-	eval ARG_VAL=$(echo \"\$${ARG_CNT}\");
+	eval ARG_VAL=$(echo \"\$\{${ARG_CNT}\}\");
 	SEDEXP="s${SC}\${*${ARG_NAME}}*${SC}${ARG_VAL}${SC}g;$SEDEXP"
 	ARG_CNT=$((ARG_CNT+1))
 done
