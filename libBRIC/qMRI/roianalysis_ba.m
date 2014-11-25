@@ -8,8 +8,11 @@ Rname = fullfile(Dir, 'irseepi', 'R1'); %'se', 'R2');
 load([Rname '.mat']);
 Y_ref = Y;
 Y_ref_std = Y_std;
-Fname = fullfile(Dir, 'R1_2fa', 'DESPOT1_T1Map'); %'17', 'R2');
-load([Fname '.mat']);
+% Fname = fullfile(Dir, 'R1_2fa', 'DESPOT1_T1Map'); %'17', 'R2'); %'16', 'R2s'); %
+% load([Fname '.mat']);
+Dir = '/home/aglatz/sf_V_DRIVE/Andreas_PhD/QMRI/Phantom/MnCl2/23025/';
+Rname = fullfile(Dir, '8_9_10_11_12_13', 'DESPOT1HIFI_T1Map'); %'se', 'R2');
+load([Rname '.mat']);
 
 Type='1';
 figure;
@@ -54,7 +57,7 @@ H(2) = plot([MinAvg MaxAvg], polyval([P(2) P(1)], [MinAvg MaxAvg])+stats.s*1.95,
 H(3) = plot([MinAvg MaxAvg], [0 0], '--k');
 legend(H(1:2), 'Bias', sprintf('95%% range (%0.2f 1/s)', ss*1.95*2));
 plot([MinAvg MaxAvg], polyval([P(2) P(1)], [MinAvg MaxAvg])-ss*1.95, ':k'); %[CI_Diff(1) CI_Diff(1)], ':k');
-xlabel(['\bf (R' Type '-R' Type '_{ref})/2 in 1/s']);
+xlabel(['\bf (R' Type '+R' Type '_{ref})/2 in 1/s']);
 ylabel(['\bf R' Type '-R' Type '_{ref} in 1/s']);
 set(gcf, 'color', 'w');
 set(gca, 'FontSize', 12);

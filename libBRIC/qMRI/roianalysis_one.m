@@ -4,27 +4,26 @@ addpath('libBRIC/misc-matlab');
 
 close all; clear all; clc
 
-Dir = '/home/aglatz/sf_V_DRIVE/Andreas_PhD/QMRI/Phantom/MnCl2/22218';
-S_roi = load_series(fullfile(Dir, 'Meta', 'R2s_roi'), []);
-Fname = fullfile(Dir, '16', 'R2s');
-S = double(load_series(Fname, []));
-Mat = csvread(fullfile(Dir, 'Meta', 'R1_map_conc.csv'));
+% Dir = '/home/aglatz/sf_V_DRIVE/Andreas_PhD/QMRI/Phantom/MnCl2/22218';
+% S_roi = load_series(fullfile(Dir, 'Meta', 'R2s_roi'), []);
+% Fname = fullfile(Dir, '16_3param', 'R2s'); %'R1_2fa', 'DESPOT1_T1Map'); %'16', 'R2s');
+% S = double(load_series(Fname, []));
+% Mat = csvread(fullfile(Dir, 'Meta', 'R1_map_conc.csv'));
 
-% Dir = '/home/aglatz/sf_V_DRIVE/Andreas_PhD/QMRI/Subjects/19860';
-% S_roi = load_series(fullfile(Dir, 'Roi', 'T1w_R1HIFI_roi'), []);
-% Fname = fullfile(Dir, 'R1HIFI', 'DESPOT1HIFI_T1Map');
-% S = 1000./double(load_series(Fname, []));
-% Tmp = 0:7;
-% Mat = [2.^Tmp', Tmp'];
+Dir = '/home/aglatz/sf_V_DRIVE/Andreas_PhD/QMRI/Phantom/MnCl2/23025/';
+S_roi = load_series(fullfile(Dir, 'Meta', 'R1_roi'), []);
+Fname = fullfile(Dir, '8_11', 'DESPOT1_T1Map'); %'R1_2fa', 'DESPOT1_T1Map'); %'16', 'R2s');
+S = 1000./double(load_series(Fname, []));
+Mat = csvread(fullfile(Dir, 'Meta', 'R1_map_conc.csv'));
 
 % figure;
 % slice = round(size(S, 3)/2);
 % S_tmp = S(:, :, slice);
-% I_max = cast(quantile(double(S_tmp(:)), .8), class(S));
+% I_max = cast(quantile(double(S_tmp(:)), .95), class(S));
 % plot_image_with_masks(S(:, :, slice), '', logical(S_roi(:, :, slice)), [], [], false, I_max);
 
-cal = 3;
-Type = '2*';
+cal = -1;
+Type = '1';
 off = 0.1;
 switch cal
     case 1,
