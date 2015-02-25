@@ -237,12 +237,14 @@ L_RWM_RSYNC = REF_WM_mask$(EXT_RSYNC)
 
 # Copy and convert remote files rules #########################################
 .PHONY: all
-all:	$(L_T1W_BRAIN_RESTORE_VOL) $(L_RO_MASK) \
-		$(L_GRE_BRAIN_RESTORE_VOL) $(L_WM_MASK) $(L_GM_MASK) \
-		$(L_CS_MASK) $(L_AR_MASK) $(L_AR_ROI_MASK) \
-		$(L_FE_REF_MASK) $(L_FE_ROI_MASK) \
-		$(INPUT_CSV) $(L_FLAIR_BRAIN_RESTORE_VOL) \
-		$(L_T2W_BRAIN_RESTORE_VOL) $(OUTPUT_CSV)
+#all:	$(L_T1W_BRAIN_RESTORE_VOL) $(L_RO_MASK) \
+#		$(L_GRE_BRAIN_RESTORE_VOL) $(L_WM_MASK) $(L_GM_MASK) \
+#		$(L_CS_MASK) $(L_AR_MASK) $(L_AR_ROI_MASK) \
+#		$(L_FE_REF_MASK) $(L_FE_ROI_MASK) \
+#		$(INPUT_CSV) $(L_FLAIR_BRAIN_RESTORE_VOL) \
+#		$(L_T2W_BRAIN_RESTORE_VOL) $(OUTPUT_CSV)
+all:	$(L_T1W_BRAIN_RESTORE_VOL) $(L_RO_MASK) $(INPUT_CSV) \
+		$(L_GRE_BRAIN_RESTORE_VOL) $(L_WM_MASK) $(OUTPUT_CSV)
 	@OUT_FILES=`echo "$+" | sed s+$(INPUT_CSV)++g | sed s+$(OUTPUT_CSV)++g`; \
 	 DST_PATH=`cat $(OUTPUT_CSV)`; \
 	 $(copy_result)
@@ -252,8 +254,11 @@ define copy_result
 if [ ! -z $${DST_PATH} ]; \
 then \
 	mkdir -p $${DST_PATH}; \
-	$(SCRIPT_DIR)copy_result.sh $${OUT_FILES} $${DST_PATH}; \
-fi;
+else \
+	rm -rf $${DST_PATH}/*; \
+fi; \
+echo "copy: $${OUT_FILES} -> $${DST_PATH}"; \
+$(SCRIPT_DIR)copy_result.sh $${DST_PATH} $${OUT_FILES};
 endef
 
 define remove_intermediate
@@ -503,6 +508,9 @@ $(L_T2W_NOTREG_BRAIN_MASK): $(L_GRE_BRAIN_MASK) $(L_T2W_NOTREG_BRAIN1_VOL) \
 
 $(L_T1W_NOTREG_BRAIN_VOL): $(L_T1W_NOTREG_VOL) $(L_T1W_NOTREG_BRAIN_MASK)
 	@$(extract_brain)
+	@$(SCRIPT_DIR)exec_matlab.sh $(SCRIPT_DIR)prepinput.mt \
+		$(L_T1W_NOTREG_BRAIN_VOL) tmp_$(L_T1W_NOTREG_BRAIN_VOL); \
+	 mv tmp_$(L_T1W_NOTREG_BRAIN_VOL) $(L_T1W_NOTREG_BRAIN_VOL);
 	@$(check_target)
 
 $(L_FLAIR_NOTREG_BRAIN_VOL): $(L_FLAIR_NOTREG_VOL) $(L_FLAIR_NOTREG_BRAIN_MASK)
@@ -513,9 +521,10 @@ $(L_T2W_NOTREG_BRAIN_VOL): $(L_T2W_NOTREG_VOL) $(L_T2W_NOTREG_BRAIN_MASK)
 	@$(extract_brain)
 	@$(check_target)
 
-$(L_T1W_BRAIN_VOL): $(L_T1W_VOL) $(L_GRE_BRAIN_MASK)
-	@$(extract_brain)
-	@$(check_target)
+# L_T1W_VOL doesn't fit due to trimming of NOTREG volume
+#$(L_T1W_BRAIN_VOL): $(L_T1W_VOL) $(L_GRE_BRAIN_MASK)
+#	@$(extract_brain)
+#	@$(check_target)
 
 $(L_FLAIR_BRAIN_VOL): $(L_FLAIR_VOL) $(L_GRE_BRAIN_MASK)
 	@$(extract_brain)
@@ -677,8 +686,8 @@ $(L_T2W_NOTREG_BRAIN_RESTORE_MAT): $(L_T2W_NOTREG_BRAIN_RESTORE_VOL) \
 	@$(register)
 	@$(check_target)
 
-$(L_T1W_VOL): $(L_T1W_NOTREG_VOL) $(L_GRE_BRAIN_RESTORE_VOL) \
-			  $(L_T1W_NOTREG_BRAIN_RESTORE_MAT)
+$(L_T1W_BRAIN_VOL): $(L_T1W_NOTREG_BRAIN_VOL) $(L_GRE_BRAIN_RESTORE_VOL) \
+					$(L_T1W_NOTREG_BRAIN_RESTORE_MAT)
 	@FLIRT_COEF="-interp sinc"; \
 	 $(apply_transform)
 	@$(check_target)
