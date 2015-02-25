@@ -1,7 +1,7 @@
 #!/bin/bash
 
-OUT_FILES=$1
-DST_PATH=$2
+DST_PATH=$1; shift
+OUT_FILES="$@"
 
 rsync -azi ${OUT_FILES} ${DST_PATH} > /dev/zero
 
