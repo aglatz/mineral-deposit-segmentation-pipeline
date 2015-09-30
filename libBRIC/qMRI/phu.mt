@@ -1,7 +1,7 @@
 addpath('${SCRIPT_DIR}/NIFTI');
 addpath('${SCRIPT_DIR}/LIBRA');
 addpath('${SCRIPT_DIR}/libBRIC/misc-matlab');
-addpath('${SCRIPT_DIR}/STI_Suite_v1.42/Core_Functions')
+% addpath('${SCRIPT_DIR}/STI_Suite_v1.42/Core_Functions')
 
 % ARG_0: Basename in
 % ARG_1: Number of echoes
@@ -31,17 +31,17 @@ else
 end
 T
 
-% Load input data
+% Load input data - phase must be unwrapped
 S_abs_in = double(load_series([fname_in '_mag'], []));
-S_pha_in = double(load_series([fname_in '_pha'], []));
+S_phu_in = double(load_series([fname_in '_phu'], []));
 N_xy = [size(S_abs_in, 1), size(S_abs_in, 2), 1];
 if mod(size(S_abs_in, 3), 2) == 1
 	S_abs_in = cat(3, S_abs_in(:, :, :, idx_te), zeros([N_xy N_te]));
-	S_pha_in = cat(3, S_pha_in(:, :, :, idx_te), zeros([N_xy N_te]));
+	S_phu_in = cat(3, S_phu_in(:, :, :, idx_te), zeros([N_xy N_te]));
 	expanded = 1;
 else
 	S_abs_in = S_abs_in(:, :, :, idx_te);
-	S_pha_in = S_pha_in(:, :, :, idx_te);
+	S_phu_in = S_phu_in(:, :, :, idx_te);
 	expanded = 0;
 end 
 
@@ -63,11 +63,9 @@ F = NII.hdr.dime.pixdim(2:4);
 N_pad = ceil(F*10);
 sigma = ${ARG_5}/2.3548; % ARG_5 is FWHM
 fprintf('gauss3filter: FWHM:%0.3fmm Sigma:%0.3fmm\n', ${ARG_5}, sigma);
-S_phu = zeros(size(S_pha_in));
-S_phu_f = zeros(size(S_pha_in));
+S_phu_f = zeros(size(S_phu_in));
 for idx=1:N_te
-	S_phu(:, :, :, idx) = LaplacianPhaseUnwrap(S_pha_in(:,:,:,idx), F, N_pad);
-	S_tmp_pad = padarray(S_phu(:, :, :, idx), N_pad);
+	S_tmp_pad = padarray(S_phu_in(:, :, :, idx), N_pad);
 	S_tmp_pad_f = gauss3filter(S_tmp_pad, sigma, F);
 	if ${ARG_6}
 		S_tmp_pad_f = angle(exp(sqrt(-1).*S_tmp_pad)./exp(sqrt(-1).*S_tmp_pad_f));
@@ -81,9 +79,9 @@ for idx=1:N_te
 	S_tmp_f(~SM_brain) = 0;
 	S_phu_f(:, :, :, idx) = S_tmp_f;
 end
-%save_series([fname_in '_mag'], [fname_out '_phu'], single(S_phu), []);
+%save_series([fname_in '_mag'], [fname_out '_phu'], single(S_phu_in), []);
 %save_series([fname_in '_mag'], [fname_out '_phu_filt'], single(S_phu_f), []);
-clear S_mag_in S_pha_in S_phu S_tmp_pad S_tmp_pad_f S_tmp_f;
+clear S_mag_in S_phu_in S_tmp_pad S_tmp_pad_f S_tmp_f;
 
 % Reconstruct unwrapped phase by assuming a linear phase evolution: phi = k*TE + d
 K_est = zeros(size(S_phu_f(:, :, :, 1)));

@@ -6,7 +6,7 @@ S_gre = load_series('${ARG_0}', []); % Multi echo gradient echo magnitude
 N_echo = [ ${ARG_1} ];
 S_gre = single(S_gre(:, :, :, 1:N_echo));
 T_delta = ${ARG_3}-${ARG_2};
-T = ${ARG_2}:T_delta:(${ARG_2}+T_delta*N_echo); % First echo and spacing in us
+T = ${ARG_2}:T_delta:(${ARG_2}+T_delta*(N_echo-1)); % First echo and spacing in us
 fprintf('Echoes: ');
 for echo = 1:N_echo
 	fprintf('%d ', T(echo));

@@ -243,22 +243,27 @@ L_RWM_RSYNC = REF_WM_mask$(EXT_RSYNC)
 #		$(L_FE_REF_MASK) $(L_FE_ROI_MASK) \
 #		$(INPUT_CSV) $(L_FLAIR_BRAIN_RESTORE_VOL) \
 #		$(L_T2W_BRAIN_RESTORE_VOL) $(OUTPUT_CSV)
-all:	$(L_T1W_BRAIN_RESTORE_VOL) $(L_RO_MASK) $(INPUT_CSV) \
-		$(L_GRE_BRAIN_RESTORE_VOL) $(L_WM_MASK) $(OUTPUT_CSV)
+all:	$(INPUT_CSV) $(OUTPUT_CSV) \
+		$(L_T1W_BRAIN_RESTORE_VOL) $(L_GRE_BRAIN_RESTORE_VOL) \
+		$(L_RO_MASK) \
+		$(L_WM_MASK) $(L_GM_MASK) $(L_CS_MASK) $(L_AR_MASK) $(L_AR_ROI_MASK)
 	@OUT_FILES=`echo "$+" | sed s+$(INPUT_CSV)++g | sed s+$(OUTPUT_CSV)++g`; \
 	 DST_PATH=`cat $(OUTPUT_CSV)`; \
 	 $(copy_result)
 	@$(remove_intermediate)
 
 define copy_result
-if [ ! -z $${DST_PATH} ]; \
+if [ x$${DST_PATH} != x ]; \
 then \
-	mkdir -p $${DST_PATH}; \
-else \
-	rm -rf $${DST_PATH}/*; \
-fi; \
-echo "copy: $${OUT_FILES} -> $${DST_PATH}"; \
-$(SCRIPT_DIR)copy_result.sh $${DST_PATH} $${OUT_FILES};
+	if [ ! -z $${DST_PATH} ]; \
+	then \
+		mkdir -p $${DST_PATH}; \
+	else \
+		rm -rf $${DST_PATH}/*; \
+	fi; \
+	echo "copy: $${OUT_FILES} -> $${DST_PATH}"; \
+	$(SCRIPT_DIR)copy_result.sh $${DST_PATH} $${OUT_FILES}; \
+fi;
 endef
 
 define remove_intermediate
@@ -508,10 +513,10 @@ $(L_T2W_NOTREG_BRAIN_MASK): $(L_GRE_BRAIN_MASK) $(L_T2W_NOTREG_BRAIN1_VOL) \
 
 $(L_T1W_NOTREG_BRAIN_VOL): $(L_T1W_NOTREG_VOL) $(L_T1W_NOTREG_BRAIN_MASK)
 	@$(extract_brain)
-	@$(SCRIPT_DIR)exec_matlab.sh $(SCRIPT_DIR)prepinput.mt \
-		$(L_T1W_NOTREG_BRAIN_VOL) tmp_$(L_T1W_NOTREG_BRAIN_VOL); \
-	 mv tmp_$(L_T1W_NOTREG_BRAIN_VOL) $(L_T1W_NOTREG_BRAIN_VOL);
 	@$(check_target)
+#	@$(SCRIPT_DIR)exec_matlab.sh $(SCRIPT_DIR)prepinput.mt \
+#		$(L_T1W_NOTREG_BRAIN_VOL) tmp_$(L_T1W_NOTREG_BRAIN_VOL); \
+#	 mv tmp_$(L_T1W_NOTREG_BRAIN_VOL) $(L_T1W_NOTREG_BRAIN_VOL);
 
 $(L_FLAIR_NOTREG_BRAIN_VOL): $(L_FLAIR_NOTREG_VOL) $(L_FLAIR_NOTREG_BRAIN_MASK)
 	@$(extract_brain)
@@ -799,7 +804,7 @@ $(L_BG_MASK): $(L_BG_NOTREG_MASK) $(L_GRE_VOL) $(L_T1W_NOTREG_BRAIN_RESTORE_MAT)
 define run_first
 IN=`echo $< | $(FSL_EXT_VOL_SED)`; \
 OUT=$${IN}_first; \
-FIRST_COEF="-s BrStem,L_Thal,L_Caud,L_Puta,L_Pall,R_Thal,R_Caud,R_Puta,R_Pall";\
+FIRST_COEF="-s L_Thal,L_Caud,L_Puta,L_Pall,R_Thal,R_Caud,R_Puta,R_Pall";\
 rm -rf $${OUT}*; \
 echo -n "$(CUR_DIR)/$@: fitting model using first with $$FIRST_COEF..."; \
 $(FSL_BIN_PFX)run_first_all $$FIRST_COEF -i $$IN -o $$OUT -b; \
@@ -832,7 +837,7 @@ $(L_SE_HARD_MASK): $(L_SE_MASK)
 	@cp tmp_$< $@;
 	@$(check_target)
 
-$(L_SE_HARD_LORD): $(L_GRE_BRAIN_RESTORE_VOL) $(L_SE_HARD_MASK)
+$(L_SE_HARD_LORD): $(L_T1W_BRAIN_RESTORE_VOL) $(L_SE_HARD_MASK)
 	@echo -n "$(CUR_DIR)/$@: determine label order..."; \
 	 GRE=`echo "$+" | cut -d ' ' -f 1`; \
 	 MASK=`echo "$+" | cut -d ' ' -f 2`; \

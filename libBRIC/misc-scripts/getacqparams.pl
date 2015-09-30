@@ -7,14 +7,37 @@ die("\nUsage: getacqparams.pl <dir1> ... <dirN>\n") if ($#ARGV < 0);
 
 #printf("Parameters: @ARGV\n");
 
-my $dir;
-my $argcnt = 0;
-printf("Dir,SliceThickness,RepetitionTime,EchoTime,InversionTime,NumberOfAverages," .
-	   "PixelBandwidth,Mx,My,FlipAngle,FOV,NumberOfEchos,TransmitGain,AnalogReceiverGain," .
-	   "DigitalReceiverGain,PulseSequenceName,Px,Py\n");
-for $dir (@ARGV) {
+# Print HTML header and header row
+print("<!DOCTYPE HTML>\n");
+print("<html>\n");
+print("<body>\n");
+print("<table style=\"width:100%\">\n");
+println_tr();
+my @hdr = (	"Dir",
+			"FlipAngle",
+			"PulseSequenceName",
+			"RepetitionTime",
+			"InversionTime",
+			"TransmitGain",
+			"AnalogReceiverGain",
+			"DigitalReceiverGain",
+			"EchoTime",
+			"NumberOfAverages",
+			"NumberOfEchos",
+			"PixelBandwidth",
+			"SliceThickness" ,
+			"MatrixSize",
+			"PixelSize",
+			"FOV"
+		  );
+foreach my $col (@hdr) {
+	println_td_ntd($col);
+}
+println_ntr();
+
+for my $dir (@ARGV) {
 	unless ( opendir(DH, "$dir/Input") ) {
-		printf("Warning: Cannot read $dir! Wrong structure? Skipping...\n");
+		warn("Warning: Cannot read $dir! Wrong structure? Skipping...\n");
 		next;
 	}
 	my @files = readdir(DH);
@@ -32,85 +55,109 @@ for $dir (@ARGV) {
 	}
 
 	unless ( $cnt == 1 ) {
-		printf("Warning: Too many txt files in $dir/Input!\n");
+		warn("Warning: Too many txt files in $dir/Input!\n");
 		next;
 	}
 
 	unless ( open(FH, $txtname) ) {
-		printf("Warning: Cannot open txt file" . $txtname . "! Skipping...\n");
+		warn("Warning: Cannot open txt file" . $txtname . "! Skipping...\n");
 		next;
 	}
-	$cnt = 0;
-	printf("$dir,");
+
+	my @arr = ();
 	while (my $line = <FH>) {
 		if ( $line =~ /^\(0018,1314\) DS \[(.*)\]/ ) { # FlipAngle
-			printf("$1,");
-			$cnt = $cnt + 1;
+			$arr[0] = $1;
 		}
 		if ( $line =~ /^\(0019,109c\) LO \[(.*)\]/ ) { # PulseSequenceName
-			printf("$1,");
-			$cnt = $cnt + 1;
+			$arr[1] = $1;
 		}
 		if ( $line =~ /^\(0018,0080\) DS \[(.*)\]/ ) { # RepetitionTime
-			printf("$1,");
-			$cnt = $cnt + 1;
+			$arr[2] = $1;
 		}
 		if ( $line =~ /^\(0018,0082\) DS \[(.*)\]/ ) { # InversionTime
-			printf("$1,");
-			$cnt = $cnt + 1;
+			$arr[3] = $1;
 		}
 		if ( $line =~ /^\(0019,1094\) SS (\d*) / ) { # TransmitGain
-			printf("$1,");
-			$cnt = $cnt + 1;
+			$arr[4] = $1;
 		}
 		if ( $line =~ /^\(0019,1095\) SS (\d*) / ) { # AnalogReceiverGain
-			printf("$1,");
-			$cnt = $cnt + 1;
+			$arr[5] = $1;
 		}
 		if ( $line =~ /^\(0019,1096\) SS (\d*) / ) { # DigitalReceiverGain
-			printf("$1,");
-			$cnt = $cnt + 1;
+			$arr[6] = $1;
 		}
 		if ( $line =~ /^\(0018,0081\) DS \[(.*)\] / ) { # EchoTime
-			printf("$1,");
-			$cnt = $cnt + 1;
+			$arr[7] = $1;
 		}
 		if ( $line =~ /^\(0018,0083\) DS \[(.*)\] / ) { # NumberOfAverages
-			printf("$1,");
-			$cnt = $cnt + 1;
+			$arr[8] = $1;
 		}
 		if ( $line =~ /^\(0019,107e\) SS (\d*) / ) { # NumberOfEchos
-			printf("$1,");
-			$cnt = $cnt + 1;
+			$arr[9] = $1;
 		}
 		if ( $line =~ /^\(0018,0095\) DS \[(.*)\] / ) { # PixelBandwidth
-			printf("$1,");
-			$cnt = $cnt + 1;
+			$arr[10] = $1;
 		}
 		if ( $line =~ /^\(0018,0050\) DS \[(.*)\] / ) { # SliceThickness
-			printf("$1,");
-			$cnt = $cnt + 1;
+			$arr[11] = $1;
 		}
 		if ( $line =~ /^\(0018,1310\) US 0\\(\d*)\\(\d*)\\0 / ) { # AcquisitionMatrix
-			printf("$1,$2,");
-			$cnt = $cnt + 1;
+			$arr[12] = "$1, $2";
 		}
 		if ( $line =~ /^\(0028,0030\) DS \[(.*)\\(.*)\] / ) { # PixelSpacing
-			printf("$1,$2,");
-			$cnt = $cnt + 1;
+			$arr[13] = "$1, $2";
 		}
 		if ( $line =~ /^\(0019,101e\) DS \[(.*)\] / ) { # DisplayFieldOfView
-			printf("$1,");
-			$cnt = $cnt + 1;
+			$arr[14] = $1;
 		}
 	}
 	close(FH);
-	printf("\n");
-	unless ( $cnt == 15 ) {
-		printf("$cnt Warning: Not all fields valid in file $dir/Input" . $txtname . "!\n");
-		next;
+
+	# Print the current row
+	println_tr();
+	println_td_ntd($dir);
+	for (my $i=0; $i<=$#arr; $i++) {
+		if ($arr[$i]) {
+			println_td_ntd($arr[$i]);
+		} else {
+			println_td_ntd_nan(1);
+		}
 	}
-	$argcnt = $argcnt + 1;
+	println_ntr();
 }
 
+# Print end of HTML
+print("</table>\n");
+print("</body>\n");
+print("</html>\n");
+
 exit 0;
+
+#--- Subs ---------------------------------------------------------------------
+sub println_tr
+{
+	print("<tr>\n");
+}
+
+sub println_ntr
+{
+	print("</tr>\n");
+}
+
+sub println_td_ntd
+{
+	my $str = shift;
+	print("\t<td>$str</td>\n");
+}
+
+sub println_td_ntd_nan
+{
+	my $i = 0;
+	my $cnt = shift;
+	
+	while ($i < $cnt) {
+		println_td_ntd("N/A");
+		$i = $i + 1;
+	}
+}
