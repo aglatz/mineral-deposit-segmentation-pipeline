@@ -10,7 +10,7 @@ me2r2()
 	SKIP=$3
 
 	cd $OUTDIR
-	TMP=`grep -rwn $STR * | cut -d '/' -f 1 | uniq | xargs`
+	TMP=`grep -rwn $STR\] * | cut -d '/' -f 1 | uniq | xargs`
 	echo "Found $STR in the following directories: $TMP"
 	for DIR in $TMP
 	do
@@ -59,37 +59,56 @@ me2r2()
 			$DIR/S_mag \
 			`echo $ECHOES | wc -w` \
 			`echo $ECHOES | cut -d ' ' -f 1,2` \
-			10 \
+			100 \
 			0 \
 			$DIR/$OUT
 	done
 }
 
+usage() 
+{
+	echo "usage: $0 <tools dir> <dcmtk dir> <dicom dir> <output dir>"
+    exit 1
+}
+
+checkdir()
+{
+	local _resultvar=$1
+	local _indir=$2
+
+	cd $_indir &> /dev/zero
+	if [ $? -ne 0 ]
+	then
+		echo "ERROR: $_resultval directory does not exist: $_indir. Exiting."
+		exit 1
+	fi
+	eval $_resultvar="`pwd`"
+	cd - &> /dev/zero
+}
+
 ### MAIN ######################################################################
-if [ $# -lt 2 ]
+if [ $# -lt 4 ]
 then
-	echo "usage: $0 <indir> <outdir>"
-	exit 1
+	usage;
 fi
 
-IN=$1
-OUT=$2
+# /home/s1063233/mineral-deposit-segmentation-pipeline 
+checkdir TOOLSDIR $1
 
-# Setup the environment
-cd /home/s1063233/mineral-deposit-segmentation-pipeline || exit 1;
-TOOLSDIR=`pwd`;
-
-cd /home/s1063233/dcmtk/install || exit 1;
-PATH=$PATH:`pwd`/bin;
-DCMTKTOOL=`pwd`
+# /home/s1063233/dcmtk/install
+checkdir DCMTKTOOL $2
+export PATH=$PATH:$DCMTKTOOL/bin
 DCMDICTPATH=$DCMTKTOOL/share/dcmtk/dicom.dic:$DCMTKTOOL/share/dcmtk/private.dic
 export DCMDICTPATH=$DCMDICTPATH
 
-# Check the input
-cd $IN || exit 1; export INDIR=`pwd`
-cd $OUT || exit 1; export OUTDIR=`pwd`
+# 1 2 3 4 ...
+checkdir INDIR $3
+
+# output dir
+checkdir OUTDIR $4
 
 # Convert DICOMs
+if true; then
 echo "DCM2NII: $IN -> $OUT"
 for DIR in `ls $INDIR | xargs`
 do
@@ -98,16 +117,27 @@ do
 	$TOOLSDIR/libBRIC/misc-scripts/dcm2nii.pl \
 		$INDIR/$DIR $OUTDIR/$DIR/Input &> $OUTDIR/$DIR/Input/dcm2nii.pl.log
 done
+fi
 
 # Reconstruct R2s maps
 echo ""
 echo "------------"
-me2r2 3DMEGE R2s 0
+read -p "Do you want to reconstruct the T2* map from MEGE? [y|n]" yn
+if [ x$yn = xy -o x$yn = xY ]
+then
+	echo "me2r2 MEGE R2s 0"
+	me2r2 MEGE R2s 0
+fi
 
 # Reconstruct R2 maps
 echo ""
 echo "------------"
-me2r2 2DMESE R2 1
+read -p "Do you want to reconstruct the T2 map from MESE? [y|n]" yn
+if [ x$yn = xy -o x$yn = xY ]
+then
+	echo "me2r2 2DMESE R2 0"
+	me2r2 2DMESE R2 0 #1
+fi
 
 echo ""
 echo "DONE."
