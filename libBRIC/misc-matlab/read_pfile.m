@@ -1,4 +1,12 @@
 function [gehdr, out_abs, out_pha] = read_pfile(pfile, recon)
+% Reads GE pfile data (kspace) and transforms them into image space.
+% INPUT: pfile - pfile name
+%        recon - if 'true' it combines the images from a coil array (see
+%                below)
+% OUTPUT: gehdr - pfile header as a struct
+%         out_abs - reconstructed magnitude images
+%         out_pha - reconstructed phase images
+%
 
 % TODO make them a varin
 x_idx = [];
@@ -71,7 +79,8 @@ if ~isempty(SM_noise)
 end
 
 if recon
-	out_data = zeros(x_size, y_size, z_size, necho-1);
+    % See: Neuroimage, 2010 Jul 1; 51(3):1089-97
+    out_data = zeros(x_size, y_size, z_size, necho-1);
     for echo_idx = 2:necho
         S_tmp = zeros(size(raw_data(:, :, :, 1, 1)));
         for recv_idx = 1:hdr.nrecv;
