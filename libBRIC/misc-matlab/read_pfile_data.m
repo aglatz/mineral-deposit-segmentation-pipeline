@@ -44,7 +44,11 @@ for recv = 1 : hdr.nrecv
         end                
     end
     
-    % Each slice contains the raw data... (k-space!). Use
-    % fftshift/ifftshift in case we have to handle odd numbered frames.
-    data(:, end:-1:1, recv) = fftshift( ifft2( fftshift( data(:, :, recv) ) ) ) * 4096;
+    % Each slice contains the raw data... (k-space!). The ifft2 along
+    % z was calculated by the scanner.
+    % Now we just need ifft2(). Use fftshift/ifftshift in to
+    % handle the fact that kx,ky == 0 is in the middle of the matrix.
+    % See e.g. blog.mshalin.com/2009/12/interplay-of-fft-ifft-fftshift-and_750.html
+    % TODO solve the scaling issue?
+    data(:, end:-1:1, recv) = fftshift( ifft2( ifftshift( data(:, :, recv) ) ) ) * 1024;
 end
