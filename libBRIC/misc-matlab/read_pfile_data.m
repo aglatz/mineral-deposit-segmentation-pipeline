@@ -1,4 +1,6 @@
 function [data] = read_pfile_data(fd, hdr, echo, slice)
+% This script is based on the one from F. Frigo; see here:
+% www.eng.mu.edu/frigof
 
 % data_offset, point_size, nsamp, nframe, nrecv, necho, nslice
 if echo > hdr.necho || slice > hdr.nslice
